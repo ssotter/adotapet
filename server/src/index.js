@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import neighborhoodsRoutes from "./routes/neighborhoods.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import meRoutes from "./routes/me.routes.js";
+import petPostsRoutes from "./routes/pet-posts.routes.js";
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ app.get("/health", (req, res) => {
 app.use("/neighborhoods", neighborhoodsRoutes);
 app.use("/auth", authRoutes);
 app.use("/me", meRoutes);
-
+app.use("/posts", petPostsRoutes);
 
 // Middleware de erro global
 app.use((err, req, res, next) => {
