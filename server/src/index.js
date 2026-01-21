@@ -4,6 +4,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import neighborhoodsRoutes from "./routes/neighborhoods.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+import meRoutes from "./routes/me.routes.js";
 
 dotenv.config();
 
@@ -19,6 +21,9 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/neighborhoods", neighborhoodsRoutes);
+app.use("/auth", authRoutes);
+app.use("/me", meRoutes);
+
 
 // Middleware de erro global
 app.use((err, req, res, next) => {
