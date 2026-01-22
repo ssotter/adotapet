@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.routes.js";
 import meRoutes from "./routes/me.routes.js";
 import petPostsRoutes from "./routes/pet-posts.routes.js";
 import petPhotosRoutes from "./routes/pet-photos.routes.js";
+import visitRequestsRoutes from "./routes/visit-requests.routes.js";
 
 dotenv.config();
 
@@ -27,6 +28,8 @@ app.use("/auth", authRoutes);
 app.use("/me", meRoutes);
 app.use("/posts", petPostsRoutes);
 app.use("/", petPhotosRoutes);
+app.use("/", visitRequestsRoutes);
+
 
 // Middleware de erro global
 app.use((err, req, res, next) => {

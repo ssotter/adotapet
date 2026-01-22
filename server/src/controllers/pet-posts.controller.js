@@ -1,4 +1,5 @@
 import { pool } from "../db/connection.js";
+import { verifyToken } from "../utils/jwt.js";
 
 function toNumber(value) {
   if (value === undefined) return undefined;
@@ -142,14 +143,59 @@ export async function getPostById(req, res) {
     return res.status(404).json({ error: "Anúncio não encontrado" });
   }
 
+  const post = postResult.rows[0];
+
   const photosResult = await pool.query(
     "SELECT id, url, created_at FROM pet_photos WHERE post_id = $1 ORDER BY created_at ASC",
     [id]
   );
 
+  // ==========================
+  // Liberação do WhatsApp
+  // ==========================
+  let owner_whatsapp = null;
+
+  // tenta ler token (opcional)
+  const authHeader = req.headers.authorization;
+  let loggedUserId = null;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    try {
+      const decoded = verifyToken(token); // { id, email, iat, exp }
+      loggedUserId = decoded?.id ?? null;
+    } catch {
+      // token inválido -> mantém loggedUserId null (não libera contato)
+      loggedUserId = null;
+    }
+  }
+
+  if (loggedUserId) {
+    // 1) Dono do anúncio sempre pode ver
+    if (loggedUserId === post.owner_id) {
+      const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [post.owner_id]);
+      owner_whatsapp = owner.rows[0]?.whatsapp ?? null;
+    } else {
+      // 2) Interessado só vê se tiver solicitação APPROVED
+      const approved = await pool.query(
+        `SELECT id
+         FROM visit_requests
+         WHERE post_id = $1 AND requester_id = $2 AND status = 'APPROVED'
+         LIMIT 1`,
+        [id, loggedUserId]
+      );
+
+      if (approved.rows.length > 0) {
+        const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [post.owner_id]);
+        owner_whatsapp = owner.rows[0]?.whatsapp ?? null;
+      }
+    }
+  }
+
   return res.json({
-    ...postResult.rows[0],
+    ...post,
     photos: photosResult.rows,
+    owner_whatsapp, // null se não permitido
   });
 }
 
@@ -272,4 +318,52 @@ export async function setPostStatus(req, res) {
   }
 
   return res.json(result.rows[0]);
+}
+
+export async function getPostContact(req, res) {
+  const requesterId = req.user.id;
+  const { id: postId } = req.params;
+
+  // Post existe?
+  const post = await pool.query(
+    "SELECT id, owner_id FROM pet_posts WHERE id = $1",
+    [postId]
+  );
+
+  if (post.rows.length === 0) {
+    return res.status(404).json({ error: "Anúncio não encontrado" });
+  }
+
+  const ownerId = post.rows[0].owner_id;
+
+  // Dono sempre pode ver o próprio contato
+  if (ownerId === requesterId) {
+    const owner = await pool.query(
+      "SELECT whatsapp FROM users WHERE id = $1",
+      [ownerId]
+    );
+    return res.json({ whatsapp: owner.rows[0]?.whatsapp ?? null, allowed: true });
+  }
+
+  // Só libera se houver solicitação APPROVED
+  const approved = await pool.query(
+    `SELECT id
+     FROM visit_requests
+     WHERE post_id = $1 AND requester_id = $2 AND status = 'APPROVED'
+     LIMIT 1`,
+    [postId, requesterId]
+  );
+
+  if (approved.rows.length === 0) {
+    return res.status(403).json({
+      error: "Contato não liberado. Solicite visita e aguarde aprovação.",
+    });
+  }
+
+  const owner = await pool.query(
+    "SELECT whatsapp FROM users WHERE id = $1",
+    [ownerId]
+  );
+
+  return res.json({ whatsapp: owner.rows[0]?.whatsapp ?? null, allowed: true });
 }
