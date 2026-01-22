@@ -1,0 +1,62 @@
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../store/auth";
+
+function NavItem({ to, children }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `px-3 py-2 rounded-lg text-sm font-medium ${
+          isActive ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
+        }`
+      }
+    >
+      {children}
+    </NavLink>
+  );
+}
+
+export default function Navbar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  return (
+    <div className="border-b bg-white">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-black text-white grid place-items-center font-bold">
+            AP
+          </div>
+          <div className="leading-tight">
+            <div className="font-semibold">AdotaPet</div>
+            <div className="text-xs text-gray-500">Rio Grande/RS</div>
+          </div>
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <NavItem to="/">Home</NavItem>
+
+          {user ? (
+            <>
+              <NavItem to="/requests">Solicitações</NavItem>
+              <button
+                onClick={() => {
+                  logout();
+                  navigate("/login");
+                }}
+                className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+              >
+                Sair
+              </button>
+            </>
+          ) : (
+            <>
+              <NavItem to="/login">Entrar</NavItem>
+              <NavItem to="/register">Criar conta</NavItem>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
