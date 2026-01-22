@@ -21,3 +21,18 @@ export async function listPosts(filters = {}) {
   const { data } = await api.get("/posts", { params });
   return data;
 }
+
+export async function getPostById(id) {
+  const { data } = await api.get(`/posts/${id}`);
+  return data;
+}
+
+export async function requestVisit(postId, message) {
+  const { data } = await api.post(`/posts/${postId}/visit-requests`, { message });
+  return data;
+}
+
+export async function getPostContact(postId) {
+  const { data } = await api.get(`/posts/${postId}/contact`);
+  return data; // { whatsapp, allowed: true }
+}
