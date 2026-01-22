@@ -125,7 +125,7 @@ export async function listPosts(req, res) {
 export async function getPostById(req, res) {
   const { id } = req.params;
 
-  const result = await pool.query(
+  const postResult = await pool.query(
     `SELECT
       p.id, p.owner_id, p.type, p.status, p.species, p.name, p.color,
       p.age_months, p.weight_kg, p.sex, p.size,
@@ -138,11 +138,19 @@ export async function getPostById(req, res) {
     [id]
   );
 
-  if (result.rows.length === 0) {
+  if (postResult.rows.length === 0) {
     return res.status(404).json({ error: "Anúncio não encontrado" });
   }
 
-  return res.json(result.rows[0]);
+  const photosResult = await pool.query(
+    "SELECT id, url, created_at FROM pet_photos WHERE post_id = $1 ORDER BY created_at ASC",
+    [id]
+  );
+
+  return res.json({
+    ...postResult.rows[0],
+    photos: photosResult.rows,
+  });
 }
 
 export async function listMyPosts(req, res) {
