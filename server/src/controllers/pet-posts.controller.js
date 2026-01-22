@@ -111,13 +111,21 @@ export async function listPosts(req, res) {
       p.age_months, p.weight_kg, p.sex, p.size,
       p.description, p.event_date, p.created_at,
       n.name AS neighborhood,
-      p.neighborhood_id
+      p.neighborhood_id,
+      (
+        SELECT ph.url
+        FROM pet_photos ph
+        WHERE ph.post_id = p.id
+        ORDER BY ph.created_at ASC
+        LIMIT 1
+      ) AS cover_url
     FROM pet_posts p
     JOIN neighborhoods n ON n.id = p.neighborhood_id
     WHERE ${where.join(" AND ")}
     ORDER BY p.created_at DESC
     LIMIT 50;
   `;
+
 
   const result = await pool.query(sql, params);
   return res.json(result.rows);
@@ -208,13 +216,21 @@ export async function listMyPosts(req, res) {
       p.age_months, p.weight_kg, p.sex, p.size,
       p.description, p.event_date, p.created_at,
       n.name AS neighborhood,
-      p.neighborhood_id
+      p.neighborhood_id,
+      (
+        SELECT ph.url
+        FROM pet_photos ph
+        WHERE ph.post_id = p.id
+        ORDER BY ph.created_at ASC
+        LIMIT 1
+      ) AS cover_url
      FROM pet_posts p
      JOIN neighborhoods n ON n.id = p.neighborhood_id
      WHERE p.owner_id = $1
      ORDER BY p.created_at DESC`,
     [ownerId]
   );
+
 
   return res.json(result.rows);
 }

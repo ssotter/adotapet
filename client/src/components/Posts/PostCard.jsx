@@ -5,7 +5,7 @@ function badgeLabel(type) {
 }
 
 export default function PostCard({ post }) {
-  const cover = post?.photos?.[0]?.url; // se você futuramente mandar photos no list, aparece. Por enquanto usaremos placeholder.
+  const cover = post.cover_url; // se você futuramente mandar photos no list, aparece. Por enquanto usaremos placeholder.
   const title = post.name || (post.type === "FOUND_LOST" ? "Animal encontrado" : "Pet para adoção");
 
   return (
