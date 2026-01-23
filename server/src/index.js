@@ -9,6 +9,7 @@ import meRoutes from "./routes/me.routes.js";
 import petPostsRoutes from "./routes/pet-posts.routes.js";
 import petPhotosRoutes from "./routes/pet-photos.routes.js";
 import visitRequestsRoutes from "./routes/visit-requests.routes.js";
+import usersRoutes from "./routes/users.routes.js";
 
 dotenv.config();
 
@@ -25,10 +26,11 @@ app.get("/health", (req, res) => {
 
 app.use("/neighborhoods", neighborhoodsRoutes);
 app.use("/auth", authRoutes);
-app.use("/me", meRoutes);
+//app.use("/me", meRoutes);
 app.use("/posts", petPostsRoutes);
 app.use("/", petPhotosRoutes);
 app.use("/", visitRequestsRoutes);
+app.use(usersRoutes);
 
 
 // Middleware de erro global

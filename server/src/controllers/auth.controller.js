@@ -6,7 +6,10 @@ export async function register(req, res) {
   const { name, email, password, whatsapp } = req.body;
 
   // Verifica se já existe
-  const exists = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+  const exists = await pool.query(
+    "SELECT id FROM users WHERE email = $1",
+    [email]
+  );
   if (exists.rows.length > 0) {
     return res.status(409).json({ error: "E-mail já cadastrado" });
   }
@@ -16,7 +19,7 @@ export async function register(req, res) {
   const result = await pool.query(
     `INSERT INTO users (name, email, password_hash, whatsapp)
      VALUES ($1, $2, $3, $4)
-     RETURNING id, name, email, whatsapp`,
+     RETURNING id, name, email, whatsapp, avatar_url`,
     [name, email, passwordHash, whatsapp]
   );
 
@@ -30,7 +33,15 @@ export async function login(req, res) {
   const { email, password } = req.body;
 
   const result = await pool.query(
-    "SELECT id, name, email, whatsapp, password_hash FROM users WHERE email = $1",
+    `SELECT
+       id,
+       name,
+       email,
+       whatsapp,
+       avatar_url,
+       password_hash
+     FROM users
+     WHERE email = $1`,
     [email]
   );
 
@@ -53,6 +64,7 @@ export async function login(req, res) {
       name: user.name,
       email: user.email,
       whatsapp: user.whatsapp,
+      avatar_url: user.avatar_url,
     },
     token,
   });

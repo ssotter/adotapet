@@ -17,9 +17,32 @@ function NavItem({ to, children }) {
   );
 }
 
-function firstName(user) {
-  const raw = user?.name || user?.email || "Usuário";
-  return String(raw).trim().split(" ")[0] || "Usuário";
+function initialsFrom(user) {
+  const raw = (user?.name || user?.email || "U").trim();
+  const parts = raw.split(/\s+/).filter(Boolean);
+  const ini = parts
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("");
+  return ini || "U";
+}
+
+function Avatar({ user }) {
+  const initials = initialsFrom(user);
+
+  return (
+    <div className="w-10 h-10 rounded-full overflow-hidden bg-white/70 border border-[#F1E4DB] grid place-items-center">
+      {user?.avatar_url ? (
+        <img
+          src={user.avatar_url}
+          alt={user?.name || "Avatar"}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <span className="text-sm font-semibold text-gray-700">{initials}</span>
+      )}
+    </div>
+  );
 }
 
 export default function Navbar() {
@@ -40,9 +63,14 @@ export default function Navbar() {
             <>
               <NavItem to="/requests">Solicitações</NavItem>
 
-              <div className="px-3 py-2 rounded-lg text-sm font-medium bg-white/70 border border-[#F1E4DB] text-gray-700">
-                Olá, <span className="font-semibold">{firstName(user)}</span>
-              </div>
+              {/* Avatar clicável (vai para /profile) */}
+              <button
+                onClick={() => navigate("/profile")}
+                className="ml-1 rounded-xl hover:bg-white/60 p-1"
+                title="Meu perfil"
+              >
+                <Avatar user={user} />
+              </button>
 
               <button
                 onClick={() => {
