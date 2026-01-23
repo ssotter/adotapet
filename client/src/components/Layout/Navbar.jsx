@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../store/auth";
+import Logo from "../Brand/Logo";
 
 function NavItem({ to, children }) {
   return (
@@ -7,7 +8,9 @@ function NavItem({ to, children }) {
       to={to}
       className={({ isActive }) =>
         `px-3 py-2 rounded-lg text-sm font-medium ${
-          isActive ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
+          isActive
+            ? "bg-black text-white"
+            : "text-gray-700 hover:bg-gray-100"
         }`
       }
     >
@@ -21,16 +24,10 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   return (
-    <div className="border-b bg-white">
+    <div className="border-b bg-[#FFF7F2] border-[#F1E4DB]">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-black text-white grid place-items-center font-bold">
-            AP
-          </div>
-          <div className="leading-tight">
-            <div className="font-semibold">AdotaPet</div>
-            <div className="text-xs text-gray-500">Rio Grande/RS</div>
-          </div>
+          <Logo subtitle="Rio Grande/RS" />
         </Link>
 
         <div className="flex items-center gap-2">
