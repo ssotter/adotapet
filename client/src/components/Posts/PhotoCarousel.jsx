@@ -15,11 +15,11 @@ export default function PhotoCarousel({ photos = [], title = "Foto do pet" }) {
 
   return (
     <div className="space-y-3">
-      <div className="h-72 rounded-2xl overflow-hidden bg-gray-100">
+      <div className="h-72 rounded-2xl overflow-hidden bg-gray-100 flex items-center justify-center">
         <img
           src={current.url}
           alt={title}
-          className="w-full h-full object-cover"
+          className="max-h-full max-w-full object-contain"
         />
       </div>
 
@@ -33,7 +33,11 @@ export default function PhotoCarousel({ photos = [], title = "Foto do pet" }) {
             }`}
             title={`Foto ${i + 1}`}
           >
-            <img src={p.url} alt={`thumb ${i + 1}`} className="w-full h-full object-cover" />
+            <img
+              src={p.url}
+              alt={`thumb ${i + 1}`}
+              className="w-full h-full object-cover"
+            />
           </button>
         ))}
       </div>
