@@ -8,15 +8,18 @@ function NavItem({ to, children }) {
       to={to}
       className={({ isActive }) =>
         `px-3 py-2 rounded-lg text-sm font-medium ${
-          isActive
-            ? "bg-black text-white"
-            : "text-gray-700 hover:bg-gray-100"
+          isActive ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
         }`
       }
     >
       {children}
     </NavLink>
   );
+}
+
+function firstName(user) {
+  const raw = user?.name || user?.email || "Usuário";
+  return String(raw).trim().split(" ")[0] || "Usuário";
 }
 
 export default function Navbar() {
@@ -36,6 +39,11 @@ export default function Navbar() {
           {user ? (
             <>
               <NavItem to="/requests">Solicitações</NavItem>
+
+              <div className="px-3 py-2 rounded-lg text-sm font-medium bg-white/70 border border-[#F1E4DB] text-gray-700">
+                Olá, <span className="font-semibold">{firstName(user)}</span>
+              </div>
+
               <button
                 onClick={() => {
                   logout();

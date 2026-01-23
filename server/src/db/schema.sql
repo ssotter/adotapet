@@ -18,9 +18,13 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   whatsapp TEXT NOT NULL,
+
+  avatar_url TEXT NULL, -- <-- NOVO (URL do avatar no Cloudinary)
+
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
 
 -- =========================
 -- TABELA: pet_posts
