@@ -76,3 +76,13 @@ export async function listMyPosts() {
   const res = await api.get("/posts/me/mine");
   return res.data.data ?? res.data;
 }
+
+export async function updatePost(id, payload) {
+  const res = await api.put(`/posts/${id}`, payload);
+  return res.data.data ?? res.data;
+}
+
+export async function setPostStatus(postId, status) {
+  const res = await api.patch(`/posts/${postId}/status`, { status });
+  return res.data.data;
+}

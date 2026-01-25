@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import PhotoCarousel from "../components/Posts/PhotoCarousel";
 import RequestVisitModal from "../components/Posts/RequestVisitModal";
-import { getPostById, getPostContact, requestVisit } from "../api/posts";
+import {
+  getPostById,
+  getPostContact,
+  requestVisit,
+  setPostStatus,
+} from "../api/posts";
 import { useAuth } from "../store/auth";
 
 function typeLabel(type) {
@@ -22,8 +27,10 @@ export default function PostDetail() {
   const [openModal, setOpenModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [contact, setContact] = useState(null); // {whatsapp, allowed}
+  const [contact, setContact] = useState(null);
   const [contactError, setContactError] = useState(null);
+
+  const isOwner = !!(user && post?.owner_id && user.id === post.owner_id);
 
   async function load() {
     setLoading(true);
@@ -74,7 +81,28 @@ export default function PostDetail() {
       setContact(data);
     } catch (e) {
       setContact(null);
-      setContactError(e?.response?.data?.error || "Não foi possível obter o contato");
+      setContactError(
+        e?.response?.data?.error || "Não foi possível obter o contato"
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleResolvePost() {
+    const confirmed = window.confirm(
+      "Tem certeza que deseja encerrar este anúncio?"
+    );
+
+    if (!confirmed) return;
+
+    setActionLoading(true);
+    try {
+      await setPostStatus(post.id, "RESOLVED");
+      alert("Anúncio encerrado com sucesso.");
+      load();
+    } catch (e) {
+      alert(e?.response?.data?.error || "Erro ao encerrar anúncio");
     } finally {
       setActionLoading(false);
     }
@@ -83,7 +111,9 @@ export default function PostDetail() {
   if (loading) {
     return (
       <Container>
-        <div className="p-4 rounded-2xl border bg-white text-sm text-gray-500">Carregando...</div>
+        <div className="p-4 rounded-2xl border bg-white text-sm text-gray-500">
+          Carregando...
+        </div>
       </Container>
     );
   }
@@ -91,7 +121,9 @@ export default function PostDetail() {
   if (err) {
     return (
       <Container>
-        <div className="p-4 rounded-2xl border bg-white text-sm text-red-600">{String(err)}</div>
+        <div className="p-4 rounded-2xl border bg-white text-sm text-red-600">
+          {String(err)}
+        </div>
       </Container>
     );
   }
@@ -102,31 +134,56 @@ export default function PostDetail() {
     <Container>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold">{post.name}</h1>
+          <h1 className="text-2xl font-semibold">{post.name || "Sem nome"}</h1>
           <div className="text-sm text-gray-600">
             {post.neighborhood} • {typeLabel(post.type)}
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => setOpenModal(true)}
-            className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium"
-          >
-            Solicitar visita
-          </button>
+        <div className="flex gap-2 flex-wrap">
+          {!isOwner && (
+            <button
+              onClick={() => setOpenModal(true)}
+              className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium"
+            >
+              Solicitar visita
+            </button>
+          )}
 
-          <button
-            onClick={handleGetContact}
-            className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium"
-          >
-            Ver contato
-          </button>
+          {!isOwner && (
+            <button
+              onClick={handleGetContact}
+              className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium"
+            >
+              Ver contato
+            </button>
+          )}
+
+          {isOwner && (
+            <>
+              <Link
+                to={`/posts/${post.id}/edit`}
+                className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium"
+              >
+                Editar
+              </Link>
+
+              {post.status === "ACTIVE" && (
+                <button
+                  onClick={handleResolvePost}
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 text-sm font-medium disabled:opacity-50"
+                >
+                  Encerrar anúncio
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PhotoCarousel photos={post.photos} title={post.name} />
+        <PhotoCarousel photos={post.photos || []} title={post.name} />
 
         <div className="rounded-2xl border bg-white p-4 space-y-3">
           <div className="flex gap-2 flex-wrap">
@@ -151,11 +208,13 @@ export default function PostDetail() {
             </div>
             <div>
               <div className="text-gray-500">Idade</div>
-              <div className="font-medium">{post.age_months} meses</div>
+              <div className="font-medium">
+                {post.age_months ?? "-"} meses
+              </div>
             </div>
             <div>
               <div className="text-gray-500">Peso</div>
-              <div className="font-medium">{post.weight_kg} kg</div>
+              <div className="font-medium">{post.weight_kg ?? "-"} kg</div>
             </div>
             <div>
               <div className="text-gray-500">Status</div>
@@ -170,34 +229,42 @@ export default function PostDetail() {
             </div>
           </div>
 
-          <div className="pt-3 border-t">
-            <div className="text-sm font-medium">Contato do anunciante</div>
+          {!isOwner && (
+            <div className="pt-3 border-t">
+              <div className="text-sm font-medium">Contato do anunciante</div>
 
-            {contact ? (
-              <div className="mt-2 flex items-center justify-between gap-3">
-                <div className="text-sm">
-                  WhatsApp: <span className="font-semibold">{contact.whatsapp}</span>
+              {contact ? (
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <div className="text-sm">
+                    WhatsApp:{" "}
+                    <span className="font-semibold">
+                      {contact.whatsapp}
+                    </span>
+                  </div>
+
+                  <a
+                    className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium"
+                    href={`https://wa.me/${String(contact.whatsapp).replace(
+                      /\D/g,
+                      ""
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Abrir WhatsApp
+                  </a>
                 </div>
-
-                <a
-                  className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium"
-                  href={`https://wa.me/${contact.whatsapp}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Abrir WhatsApp
-                </a>
-              </div>
-            ) : (
-              <div className="mt-2 text-sm text-gray-600">
-                {contactError ? (
-                  <span className="text-red-600">{contactError}</span>
-                ) : (
-                  "Contato fica disponível após aprovação da visita."
-                )}
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="mt-2 text-sm text-gray-600">
+                  {contactError ? (
+                    <span className="text-red-600">{contactError}</span>
+                  ) : (
+                    "Contato fica disponível após aprovação da visita."
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
