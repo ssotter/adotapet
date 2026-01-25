@@ -1,5 +1,6 @@
 import { pool } from "../db/connection.js";
 import { verifyToken } from "../utils/jwt.js";
+import { uploadBufferToCloudinary } from "../services/photo.service.js";
 
 function toNumber(value) {
   if (value === undefined) return undefined;
@@ -426,4 +427,49 @@ export async function getPostContact(req, res) {
   return res.json({
     data: { whatsapp: owner.rows[0]?.whatsapp ?? null, allowed: true },
   });
+}
+
+export async function uploadPostPhotos(req, res) {
+  const ownerId = req.user.id;
+  const { id: postId } = req.params;
+
+  // valida post e dono
+  const post = await pool.query(
+    "SELECT id FROM pet_posts WHERE id = $1 AND owner_id = $2",
+    [postId, ownerId],
+  );
+
+  if (post.rows.length === 0) {
+    return res
+      .status(403)
+      .json({ error: "Sem permissão ou anúncio não encontrado" });
+  }
+
+  if (!req.files || req.files.length === 0) {
+    return res
+      .status(400)
+      .json({ error: "Nenhuma foto enviada (field: photos)" });
+  }
+
+  // upload para cloudinary + insert no banco
+  const uploaded = [];
+  for (const file of req.files) {
+    const result = await uploadBufferToCloudinary(
+      file.buffer,
+      "adotapet/posts",
+    );
+    const url = result.secure_url || result.url;
+
+    const saved = await pool.query(
+      `INSERT INTO pet_photos (post_id, url)
+       VALUES ($1, $2)
+       RETURNING id, url, created_at`,
+      [postId, url],
+    );
+
+    uploaded.push(saved.rows[0]);
+  }
+
+  // padrão { data } (B1.3)
+  return res.status(201).json({ data: uploaded });
 }

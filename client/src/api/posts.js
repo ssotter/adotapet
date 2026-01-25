@@ -60,3 +60,19 @@ export async function createPost(payload) {
   // por enquanto tolerante: se backend ainda não estiver com { data } no POST, não quebra
   return res.data.data ?? res.data;
 }
+
+export async function uploadPostPhotos(postId, files) {
+  const form = new FormData();
+  for (const f of files) form.append("photos", f);
+
+  const res = await api.post(`/posts/${postId}/photos`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return res.data.data ?? res.data;
+}
+
+export async function listMyPosts() {
+  const res = await api.get("/posts/me/mine");
+  return res.data.data ?? res.data;
+}

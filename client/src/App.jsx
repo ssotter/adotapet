@@ -8,6 +8,7 @@ import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Profile from "./pages/Profile";
 import NewPost from "./pages/NewPost";
+import MyPosts from "./pages/MyPosts";
 
 export default function App() {
   return (
@@ -40,6 +41,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <NewPost />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/my-posts"
+          element={
+            <ProtectedRoute>
+              <MyPosts />
             </ProtectedRoute>
           }
         />

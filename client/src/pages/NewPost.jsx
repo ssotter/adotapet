@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPost } from "../api/posts";
+import { createPost, uploadPostPhotos } from "../api/posts";
 import { getNeighborhoods } from "../api/neighborhoods";
 
 export default function NewPost() {
@@ -22,6 +22,8 @@ export default function NewPost() {
     description: "",
     eventDate: "",
   });
+
+  const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -56,6 +58,9 @@ export default function NewPost() {
       };
 
       const created = await createPost(payload);
+      if (photos.length > 0) {
+        await uploadPostPhotos(created.id, photos);
+      }
       navigate(`/posts/${created.id}`);
     } catch (e) {
       const msg =
@@ -219,6 +224,25 @@ export default function NewPost() {
               />
             </div>
           )}
+
+          <div>
+            <label className="text-sm block mb-1">Fotos (até 6)</label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []).slice(0, 6);
+                setPhotos(files);
+              }}
+              className="border rounded p-2 w-full"
+            />
+            {photos.length > 0 && (
+              <p className="text-sm text-gray-600 mt-1">
+                {photos.length} foto(s) selecionada(s)
+              </p>
+            )}
+          </div>
 
           <div>
             <label className="text-sm block mb-1">Descrição</label>
