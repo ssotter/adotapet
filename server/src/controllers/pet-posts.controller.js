@@ -25,14 +25,23 @@ export async function createPost(req, res) {
   } = req.body;
 
   // Regra: event_date obrigatório em FOUND_LOST
-  if (type === "FOUND_LOST" && (!eventDate || String(eventDate).trim() === "")) {
-    return res.status(400).json({ error: "eventDate é obrigatório para FOUND_LOST" });
+  if (
+    type === "FOUND_LOST" &&
+    (!eventDate || String(eventDate).trim() === "")
+  ) {
+    return res
+      .status(400)
+      .json({ error: "eventDate é obrigatório para FOUND_LOST" });
   }
 
   // Valida neighborhoodId existe
-  const nb = await pool.query("SELECT id FROM neighborhoods WHERE id = $1", [neighborhoodId]);
+  const nb = await pool.query("SELECT id FROM neighborhoods WHERE id = $1", [
+    neighborhoodId,
+  ]);
   if (nb.rows.length === 0) {
-    return res.status(400).json({ error: "Bairro inválido (neighborhoodId não encontrado)" });
+    return res
+      .status(400)
+      .json({ error: "Bairro inválido (neighborhoodId não encontrado)" });
   }
 
   const result = await pool.query(
@@ -54,15 +63,16 @@ export async function createPost(req, res) {
       neighborhoodId,
       description,
       eventDate || null,
-    ]
+    ],
   );
 
-  return res.status(201).json(result.rows[0]);
+  return res.status(201).json({ data: result.rows[0] });
 }
 
 export async function listPosts(req, res) {
   // filtros
-  const { type, neighborhoodId, color, ageMin, ageMax, weightMin, weightMax } = req.query;
+  const { type, neighborhoodId, color, ageMin, ageMax, weightMin, weightMax } =
+    req.query;
 
   const where = ["p.status = 'ACTIVE'"];
   const params = [];
@@ -126,9 +136,8 @@ export async function listPosts(req, res) {
     LIMIT 50;
   `;
 
-
   const result = await pool.query(sql, params);
-  return res.json(result.rows);
+  return res.json({ data: result.rows });
 }
 
 export async function getPostById(req, res) {
@@ -144,7 +153,7 @@ export async function getPostById(req, res) {
      FROM pet_posts p
      JOIN neighborhoods n ON n.id = p.neighborhood_id
      WHERE p.id = $1`,
-    [id]
+    [id],
   );
 
   if (postResult.rows.length === 0) {
@@ -155,7 +164,7 @@ export async function getPostById(req, res) {
 
   const photosResult = await pool.query(
     "SELECT id, url, created_at FROM pet_photos WHERE post_id = $1 ORDER BY created_at ASC",
-    [id]
+    [id],
   );
 
   // ==========================
@@ -181,7 +190,10 @@ export async function getPostById(req, res) {
   if (loggedUserId) {
     // 1) Dono do anúncio sempre pode ver
     if (loggedUserId === post.owner_id) {
-      const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [post.owner_id]);
+      const owner = await pool.query(
+        "SELECT whatsapp FROM users WHERE id = $1",
+        [post.owner_id],
+      );
       owner_whatsapp = owner.rows[0]?.whatsapp ?? null;
     } else {
       // 2) Interessado só vê se tiver solicitação APPROVED
@@ -190,20 +202,25 @@ export async function getPostById(req, res) {
          FROM visit_requests
          WHERE post_id = $1 AND requester_id = $2 AND status = 'APPROVED'
          LIMIT 1`,
-        [id, loggedUserId]
+        [id, loggedUserId],
       );
 
       if (approved.rows.length > 0) {
-        const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [post.owner_id]);
+        const owner = await pool.query(
+          "SELECT whatsapp FROM users WHERE id = $1",
+          [post.owner_id],
+        );
         owner_whatsapp = owner.rows[0]?.whatsapp ?? null;
       }
     }
   }
 
   return res.json({
-    ...post,
-    photos: photosResult.rows,
-    owner_whatsapp, // null se não permitido
+    data: {
+      ...post,
+      photos: photosResult.rows,
+      owner_whatsapp,
+    },
   });
 }
 
@@ -228,9 +245,8 @@ export async function listMyPosts(req, res) {
      JOIN neighborhoods n ON n.id = p.neighborhood_id
      WHERE p.owner_id = $1
      ORDER BY p.created_at DESC`,
-    [ownerId]
+    [ownerId],
   );
-
 
   return res.json(result.rows);
 }
@@ -240,9 +256,14 @@ export async function updatePost(req, res) {
   const { id } = req.params;
 
   // Confere se é dono
-  const owns = await pool.query("SELECT id, type FROM pet_posts WHERE id = $1 AND owner_id = $2", [id, ownerId]);
+  const owns = await pool.query(
+    "SELECT id, type FROM pet_posts WHERE id = $1 AND owner_id = $2",
+    [id, ownerId],
+  );
   if (owns.rows.length === 0) {
-    return res.status(403).json({ error: "Você não tem permissão para editar este anúncio" });
+    return res
+      .status(403)
+      .json({ error: "Você não tem permissão para editar este anúncio" });
   }
 
   const currentType = owns.rows[0].type;
@@ -256,20 +277,34 @@ export async function updatePost(req, res) {
 
   // Se trocar type para FOUND_LOST (ou já for), eventDate pode precisar
   const newType = body.type ?? currentType;
-  if (newType === "FOUND_LOST" && (body.eventDate === undefined || body.eventDate === null || String(body.eventDate).trim() === "")) {
+  if (
+    newType === "FOUND_LOST" &&
+    (body.eventDate === undefined ||
+      body.eventDate === null ||
+      String(body.eventDate).trim() === "")
+  ) {
     // só exige se veio no payload? aqui vamos exigir caso type resulte FOUND_LOST e o post não tenha event_date
-    const hasEvent = await pool.query("SELECT event_date FROM pet_posts WHERE id = $1", [id]);
+    const hasEvent = await pool.query(
+      "SELECT event_date FROM pet_posts WHERE id = $1",
+      [id],
+    );
     const existing = hasEvent.rows[0]?.event_date;
     if (!existing) {
-      return res.status(400).json({ error: "eventDate é obrigatório para FOUND_LOST" });
+      return res
+        .status(400)
+        .json({ error: "eventDate é obrigatório para FOUND_LOST" });
     }
   }
 
   // neighborhoodId: validar existe
   if (body.neighborhoodId) {
-    const nb = await pool.query("SELECT id FROM neighborhoods WHERE id = $1", [body.neighborhoodId]);
+    const nb = await pool.query("SELECT id FROM neighborhoods WHERE id = $1", [
+      body.neighborhoodId,
+    ]);
     if (nb.rows.length === 0) {
-      return res.status(400).json({ error: "Bairro inválido (neighborhoodId não encontrado)" });
+      return res
+        .status(400)
+        .json({ error: "Bairro inválido (neighborhoodId não encontrado)" });
     }
   }
 
@@ -295,7 +330,9 @@ export async function updatePost(req, res) {
   }
 
   if (fields.length === 0) {
-    return res.status(400).json({ error: "Nenhum campo enviado para atualização" });
+    return res
+      .status(400)
+      .json({ error: "Nenhum campo enviado para atualização" });
   }
 
   params.push(id);
@@ -309,7 +346,7 @@ export async function updatePost(req, res) {
   `;
 
   const result = await pool.query(sql, params);
-  return res.json(result.rows[0]);
+  return res.json({ data: result.rows[0] });
 }
 
 export async function setPostStatus(req, res) {
@@ -318,7 +355,9 @@ export async function setPostStatus(req, res) {
   const { status } = req.body;
 
   if (!["ACTIVE", "RESOLVED"].includes(status)) {
-    return res.status(400).json({ error: "status deve ser ACTIVE ou RESOLVED" });
+    return res
+      .status(400)
+      .json({ error: "status deve ser ACTIVE ou RESOLVED" });
   }
 
   const result = await pool.query(
@@ -326,14 +365,16 @@ export async function setPostStatus(req, res) {
      SET status = $1, updated_at = now()
      WHERE id = $2 AND owner_id = $3
      RETURNING id, status, updated_at`,
-    [status, id, ownerId]
+    [status, id, ownerId],
   );
 
   if (result.rows.length === 0) {
-    return res.status(403).json({ error: "Sem permissão ou anúncio não encontrado" });
+    return res
+      .status(403)
+      .json({ error: "Sem permissão ou anúncio não encontrado" });
   }
 
-  return res.json(result.rows[0]);
+  return res.json({ data: result.rows[0] });
 }
 
 export async function getPostContact(req, res) {
@@ -343,7 +384,7 @@ export async function getPostContact(req, res) {
   // Post existe?
   const post = await pool.query(
     "SELECT id, owner_id FROM pet_posts WHERE id = $1",
-    [postId]
+    [postId],
   );
 
   if (post.rows.length === 0) {
@@ -354,11 +395,13 @@ export async function getPostContact(req, res) {
 
   // Dono sempre pode ver o próprio contato
   if (ownerId === requesterId) {
-    const owner = await pool.query(
-      "SELECT whatsapp FROM users WHERE id = $1",
-      [ownerId]
-    );
-    return res.json({ whatsapp: owner.rows[0]?.whatsapp ?? null, allowed: true });
+    const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [
+      ownerId,
+    ]);
+    return res.json({
+      whatsapp: owner.rows[0]?.whatsapp ?? null,
+      allowed: true,
+    });
   }
 
   // Só libera se houver solicitação APPROVED
@@ -367,7 +410,7 @@ export async function getPostContact(req, res) {
      FROM visit_requests
      WHERE post_id = $1 AND requester_id = $2 AND status = 'APPROVED'
      LIMIT 1`,
-    [postId, requesterId]
+    [postId, requesterId],
   );
 
   if (approved.rows.length === 0) {
@@ -376,10 +419,11 @@ export async function getPostContact(req, res) {
     });
   }
 
-  const owner = await pool.query(
-    "SELECT whatsapp FROM users WHERE id = $1",
-    [ownerId]
-  );
+  const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [
+    ownerId,
+  ]);
 
-  return res.json({ whatsapp: owner.rows[0]?.whatsapp ?? null, allowed: true });
+  return res.json({
+    data: { whatsapp: owner.rows[0]?.whatsapp ?? null, allowed: true },
+  });
 }

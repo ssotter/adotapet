@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Profile from "./pages/Profile";
+import NewPost from "./pages/NewPost";
 
 export default function App() {
   return (
@@ -30,6 +31,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/posts/new"
+          element={
+            <ProtectedRoute>
+              <NewPost />
             </ProtectedRoute>
           }
         />

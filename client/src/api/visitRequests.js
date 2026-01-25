@@ -1,19 +1,33 @@
 import { api } from "./client";
 
-// dono do anúncio vê solicitações recebidas
-export async function listReceivedRequests() {
-  const { data } = await api.get("/my/received-visit-requests");
-  return data;
+function unwrap(res) {
+  return res?.data?.data;
 }
 
-// interessado vê suas próprias solicitações (guardado para depois)
-export async function listMyRequests() {
-  const { data } = await api.get("/my/visit-requests");
-  return data;
+export async function createVisitRequest(postId, message) {
+  const res = await api.post(`/posts/${postId}/visit-requests`, { message });
+  return unwrap(res);
 }
 
-// dono aprova ou rejeita
-export async function updateVisitRequest(id, status) {
-  const { data } = await api.patch(`/visit-requests/${id}`, { status });
-  return data;
+export async function listMyVisitRequests() {
+  const res = await api.get("/my/visit-requests");
+  return unwrap(res);
 }
+
+export async function listReceivedVisitRequests() {
+  const res = await api.get("/my/received-visit-requests");
+  return unwrap(res);
+}
+
+export async function updateVisitRequestStatus(id, status) {
+  const res = await api.patch(`/visit-requests/${id}`, { status });
+  return unwrap(res);
+}
+
+/**
+ * ✅ Compatibilidade:
+ * Se algum componente antigo ainda importar listReceivedRequests,
+ * mantém o alias sem quebrar o app.
+ */
+export const listReceivedRequests = listReceivedVisitRequests;
+export const updateVisitRequest = updateVisitRequestStatus;
