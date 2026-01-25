@@ -6,27 +6,21 @@ export async function uploadMyAvatar(req, res) {
   const userId = req.user.id;
 
   if (!req.file) {
-    return res.status(400).json({ error: "Arquivo não enviado (field: avatar)" });
+    return fail(res, "Arquivo não enviado (field: avatar)", 400, "VALIDATION_ERROR");
   }
 
-  try {
-    // Upload para pasta específica no Cloudinary
-    const result = await uploadBufferToCloudinary(req.file.buffer, "adotapet/avatars");
-    const avatarUrl = result.secure_url || result.url;
+  const result = await uploadBufferToCloudinary(req.file.buffer, "adotapet/avatars");
+  const avatarUrl = result.secure_url || result.url;
 
-    const updated = await pool.query(
-      `UPDATE users
-       SET avatar_url = $1, updated_at = now()
-       WHERE id = $2
-       RETURNING id, name, email, whatsapp, avatar_url`,
-      [avatarUrl, userId]
-    );
+  const updated = await pool.query(
+    `UPDATE users
+     SET avatar_url = $1, updated_at = now()
+     WHERE id = $2
+     RETURNING id, name, email, whatsapp, avatar_url`,
+    [avatarUrl, userId]
+  );
 
-    return res.json(updated.rows[0]);
-  } catch (err) {
-    console.error("uploadMyAvatar error:", err);
-    return res.status(500).json({ error: "Erro ao enviar avatar" });
-  }
+  return ok(res, updated.rows[0]);
 }
 
 export async function me(req, res) {
