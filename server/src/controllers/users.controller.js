@@ -1,5 +1,6 @@
 import { pool } from "../db/connection.js";
 import { uploadBufferToCloudinary } from "../services/photo.service.js";
+import { ok, fail } from "../utils/http.js";
 
 export async function uploadMyAvatar(req, res) {
   const userId = req.user.id;
@@ -39,8 +40,9 @@ export async function me(req, res) {
   );
 
   if (result.rows.length === 0) {
-    return res.status(404).json({ error: "Usuário não encontrado" });
+    return fail(res, "Usuário não encontrado", 404, "NOT_FOUND");
   }
 
-  return res.json(result.rows[0]);
+  return ok(res, result.rows[0]);
 }
+

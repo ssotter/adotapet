@@ -35,8 +35,18 @@ app.use(usersRoutes);
 
 // Middleware de erro global
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: "Erro interno do servidor" });
+  console.error(err);
+
+  // Erros conhecidos (multer)
+  if (err?.name === "MulterError") {
+    return res.status(400).json({
+      error: { message: err.message, code: "UPLOAD_ERROR" },
+    });
+  }
+
+  return res.status(500).json({
+    error: { message: "Erro interno do servidor", code: "INTERNAL_ERROR" },
+  });
 });
 
 const PORT = process.env.PORT || 3001;
