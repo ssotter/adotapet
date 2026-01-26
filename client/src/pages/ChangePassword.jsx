@@ -6,7 +6,7 @@ import { useAuth } from "../store/auth";
 
 export default function ChangePassword() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -39,13 +39,16 @@ export default function ChangePassword() {
     setLoading(true);
     try {
       const data = await changeMyPassword(currentPassword, newPassword);
-      setMsg(data?.message || "Senha alterada com sucesso.");
 
-      // opcional: força re-login por segurança
+      setMsg(data?.message || "Senha alterada com sucesso.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirm("");
+
+      // ✅ mantém logado e manda para Home
       setTimeout(() => {
-        logout();
-        navigate("/login");
-      }, 900);
+        navigate("/", { replace: true });
+      }, 700);
     } catch (e2) {
       setErr(e2?.response?.data?.error || "Não foi possível alterar a senha.");
     } finally {
@@ -53,13 +56,27 @@ export default function ChangePassword() {
     }
   }
 
+  const locked = loading || Boolean(msg);
+
   return (
     <Container>
       <div className="max-w-md mx-auto">
-        <h1 className="text-2xl font-semibold">Alterar senha</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          Para sua segurança, confirme sua senha atual.
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold">Alterar senha</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Para sua segurança, confirme sua senha atual.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate("/profile")}
+            className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium"
+          >
+            Voltar
+          </button>
+        </div>
 
         <form
           onSubmit={onSubmit}
@@ -76,6 +93,7 @@ export default function ChangePassword() {
               type="password"
               autoComplete="current-password"
               required
+              disabled={locked}
             />
           </div>
 
@@ -90,6 +108,7 @@ export default function ChangePassword() {
               type="password"
               autoComplete="new-password"
               required
+              disabled={locked}
             />
           </div>
 
@@ -104,12 +123,13 @@ export default function ChangePassword() {
               type="password"
               autoComplete="new-password"
               required
+              disabled={locked}
             />
           </div>
 
           {msg && (
             <div className="p-3 rounded-xl border bg-white text-sm text-gray-700">
-              {msg} Redirecionando para login...
+              {msg} Redirecionando para Home...
             </div>
           )}
 
@@ -121,7 +141,7 @@ export default function ChangePassword() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={locked}
             className="w-full px-4 py-2 rounded-xl bg-black text-white text-sm font-medium disabled:opacity-60"
           >
             {loading ? "Salvando..." : "Alterar senha"}

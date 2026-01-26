@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import { uploadMyAvatar } from "../api/users";
 import { useAuth } from "../store/auth";
@@ -94,6 +95,25 @@ export default function Profile() {
         </button>
 
         <div className="mt-3 text-xs text-gray-500"></div>
+      </div>
+
+      {/* ✅ NOVO: Segurança */}
+      <div className="mt-4 rounded-2xl border bg-white p-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <div className="font-semibold">Segurança</div>
+            <div className="text-sm text-gray-600">
+              Altere sua senha sempre que necessário.
+            </div>
+          </div>
+
+          <Link
+            to="/change-password"
+            className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium"
+          >
+            Alterar senha
+          </Link>
+        </div>
       </div>
     </Container>
   );

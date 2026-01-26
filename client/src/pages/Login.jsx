@@ -13,20 +13,15 @@ export default function Login() {
   const [email, setEmail] = useState("sergio@adotapet.com");
   const [password, setPassword] = useState("123456");
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   async function onSubmit(e) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
-
     try {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (err) {
       setError(err?.response?.data?.error || "Falha no login");
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -49,7 +44,6 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seu@email.com"
-              autoComplete="email"
             />
           </div>
 
@@ -61,25 +55,18 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="******"
-              autoComplete="current-password"
             />
           </div>
 
           {error && <div className="text-sm text-red-600">{String(error)}</div>}
 
-          <button
-            disabled={loading}
-            className="w-full bg-black text-white rounded-xl py-2 font-medium disabled:opacity-60"
-          >
-            {loading ? "Entrando..." : "Entrar"}
+          <button className="w-full bg-black text-white rounded-xl py-2 font-medium">
+            Entrar
           </button>
 
-          <div className="pt-2 flex items-center justify-between text-sm">
+          <div className="pt-2 text-sm">
             <Link to="/forgot-password" className="text-gray-700 hover:underline">
               Esqueci minha senha
-            </Link>
-            <Link to="/register" className="text-gray-700 hover:underline">
-              Criar conta
             </Link>
           </div>
         </form>
