@@ -37,7 +37,12 @@ export default function PostCard({ post }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="font-semibold leading-tight">{title}</div>
-            <div className="text-sm text-gray-600">{post.neighborhood}</div>
+
+            {/* ✅ Ajuste: label "Bairro:" antes do nome */}
+            <div className="text-sm text-gray-600">
+              <span className="font-medium text-gray-500">Bairro:</span>{" "}
+              {post.neighborhood || "—"}
+            </div>
           </div>
 
           <div className="flex flex-col items-end gap-2">

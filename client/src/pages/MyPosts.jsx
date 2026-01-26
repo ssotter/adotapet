@@ -8,6 +8,11 @@ function statusLabel(status) {
   return status || "";
 }
 
+// 🔁 Mesma função do PostCard
+function badgeLabel(type) {
+  return type === "FOUND_LOST" ? "Encontrado/Perdido" : "Adoção";
+}
+
 function MyPostsSkeleton({ count = 6 }) {
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
@@ -115,26 +120,39 @@ export default function MyPosts() {
               </div>
 
               <div className="p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="font-semibold truncate">
-                    {p.name || "Sem nome"}
-                  </h2>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold truncate">
+                      {p.name || "Sem nome"}
+                    </div>
 
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      p.status === "ACTIVE"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {statusLabel(p.status)}
-                  </span>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-500">
+                        Bairro:
+                      </span>{" "}
+                      {p.neighborhood || "—"}
+                    </div>
+                  </div>
+
+                  {/* 🔥 Mesmo layout de badges do PostCard */}
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-medium
+                        ${
+                          p.status === "ACTIVE"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-200 text-gray-700"
+                        }
+                      `}
+                    >
+                      {statusLabel(p.status)}
+                    </span>
+
+                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                      {badgeLabel(p.type)}
+                    </span>
+                  </div>
                 </div>
-
-                <p className="text-sm text-gray-600 mt-1">
-                  {p.neighborhood} •{" "}
-                  {p.type === "ADOPTION" ? "Adoção" : "Encontrado/Perdido"}
-                </p>
 
                 {p.description && (
                   <p className="text-sm text-gray-700 mt-2 line-clamp-2">
