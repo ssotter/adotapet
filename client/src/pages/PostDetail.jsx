@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import PhotoCarousel from "../components/Posts/PhotoCarousel";
@@ -93,7 +93,6 @@ export default function PostDetail() {
     const confirmed = window.confirm(
       "Tem certeza que deseja encerrar este anúncio?"
     );
-
     if (!confirmed) return;
 
     setActionLoading(true);
@@ -107,6 +106,19 @@ export default function PostDetail() {
       setActionLoading(false);
     }
   }
+
+  // ✅ fotos ordenadas com capa em primeiro
+  const orderedPhotos = useMemo(() => {
+    const list = Array.isArray(post?.photos) ? [...post.photos] : [];
+    const coverId = post?.cover_photo_id || null;
+    if (!coverId || list.length === 0) return list;
+
+    const idx = list.findIndex((p) => p.id === coverId);
+    if (idx <= 0) return list; // já é a primeira ou não achou
+
+    const [cover] = list.splice(idx, 1);
+    return [cover, ...list];
+  }, [post?.photos, post?.cover_photo_id]);
 
   if (loading) {
     return (
@@ -183,7 +195,8 @@ export default function PostDetail() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PhotoCarousel photos={post.photos || []} title={post.name} />
+        {/* ✅ agora vai abrir na capa */}
+        <PhotoCarousel photos={orderedPhotos} title={post.name} />
 
         <div className="rounded-2xl border bg-white p-4 space-y-3">
           <div className="flex gap-2 flex-wrap">
@@ -208,9 +221,7 @@ export default function PostDetail() {
             </div>
             <div>
               <div className="text-gray-500">Idade</div>
-              <div className="font-medium">
-                {post.age_months ?? "-"} meses
-              </div>
+              <div className="font-medium">{post.age_months ?? "-"} meses</div>
             </div>
             <div>
               <div className="text-gray-500">Peso</div>
@@ -237,9 +248,7 @@ export default function PostDetail() {
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <div className="text-sm">
                     WhatsApp:{" "}
-                    <span className="font-semibold">
-                      {contact.whatsapp}
-                    </span>
+                    <span className="font-semibold">{contact.whatsapp}</span>
                   </div>
 
                   <a

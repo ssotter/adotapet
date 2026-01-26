@@ -1,9 +1,19 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function PhotoCarousel({ photos = [], title = "Foto do pet" }) {
+  const safePhotos = useMemo(
+    () => (Array.isArray(photos) ? photos : []),
+    [photos]
+  );
+
   const [index, setIndex] = useState(0);
 
-  if (!photos.length) {
+  // ✅ quando a lista de fotos mudar, reseta para primeira (capa)
+  useEffect(() => {
+    setIndex(0);
+  }, [safePhotos]);
+
+  if (!safePhotos.length) {
     return (
       <div className="h-72 rounded-2xl bg-gray-100 grid place-items-center text-gray-400">
         Sem fotos
@@ -11,7 +21,7 @@ export default function PhotoCarousel({ photos = [], title = "Foto do pet" }) {
     );
   }
 
-  const current = photos[index];
+  const current = safePhotos[Math.min(index, safePhotos.length - 1)];
 
   return (
     <div className="space-y-3">
@@ -24,7 +34,7 @@ export default function PhotoCarousel({ photos = [], title = "Foto do pet" }) {
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {photos.map((p, i) => (
+        {safePhotos.map((p, i) => (
           <button
             key={p.id}
             onClick={() => setIndex(i)}
@@ -32,6 +42,7 @@ export default function PhotoCarousel({ photos = [], title = "Foto do pet" }) {
               i === index ? "border-black" : "border-gray-200"
             }`}
             title={`Foto ${i + 1}`}
+            type="button"
           >
             <img
               src={p.url}

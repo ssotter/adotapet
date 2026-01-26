@@ -1,11 +1,18 @@
-export default function FiltersBar({ neighborhoods, filters, setFilters, onSearch, onClear }) {
+export default function FiltersBar({
+  neighborhoods,
+  filters,
+  setFilters,
+  onSearch,
+  onClear,
+}) {
   function setField(key, value) {
     setFilters((f) => ({ ...f, [key]: value }));
   }
 
   return (
     <div className="p-4 rounded-2xl border bg-white">
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+      {/* 1 + 2 + 2 + 1 + 1 = 7 colunas (tudo em uma linha no md+) */}
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
         <div>
           <label className="text-xs font-medium text-gray-600">Tipo</label>
           <select
@@ -28,7 +35,9 @@ export default function FiltersBar({ neighborhoods, filters, setFilters, onSearc
           >
             <option value="">Todos</option>
             {neighborhoods.map((n) => (
-              <option key={n.id} value={n.id}>{n.name}</option>
+              <option key={n.id} value={n.id}>
+                {n.name}
+              </option>
             ))}
           </select>
         </div>
@@ -44,7 +53,9 @@ export default function FiltersBar({ neighborhoods, filters, setFilters, onSearc
         </div>
 
         <div>
-          <label className="text-xs font-medium text-gray-600">Idade (meses)</label>
+          <label className="text-xs font-medium text-gray-600">
+            Idade (meses)
+          </label>
           <div className="mt-1 grid grid-cols-2 gap-2">
             <input
               className="w-full border rounded-xl px-3 py-2"
@@ -83,7 +94,8 @@ export default function FiltersBar({ neighborhoods, filters, setFilters, onSearc
           </div>
         </div>
 
-        <div className="md:col-span-6 flex gap-2 justify-end pt-1">
+        {/* Botões continuam embaixo, mas agora o grid “real” de filtros fica 1 linha no md+ */}
+        <div className="md:col-span-7 flex gap-2 justify-end pt-1">
           <button
             onClick={onClear}
             className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium"

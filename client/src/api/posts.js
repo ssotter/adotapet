@@ -14,6 +14,7 @@ export async function listPosts(filters = {}) {
     filters.ageMin !== undefined
   )
     params.ageMin = filters.ageMin;
+
   if (
     filters.ageMax !== "" &&
     filters.ageMax !== null &&
@@ -27,6 +28,7 @@ export async function listPosts(filters = {}) {
     filters.weightMin !== undefined
   )
     params.weightMin = filters.weightMin;
+
   if (
     filters.weightMax !== "" &&
     filters.weightMax !== null &&
@@ -57,7 +59,7 @@ export async function getPostContact(postId) {
 
 export async function createPost(payload) {
   const res = await api.post("/posts", payload);
-  // por enquanto tolerante: se backend ainda não estiver com { data } no POST, não quebra
+  // tolerante: se backend ainda não estiver com { data } no POST, não quebra
   return res.data.data ?? res.data;
 }
 
@@ -69,6 +71,16 @@ export async function uploadPostPhotos(postId, files) {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
+  return res.data.data ?? res.data;
+}
+
+export async function setPostCover(postId, photoId) {
+  const res = await api.patch(`/posts/${postId}/cover`, { photoId });
+  return res.data.data ?? res.data;
+}
+
+export async function deletePostPhoto(postId, photoId) {
+  const res = await api.delete(`/posts/${postId}/photos/${photoId}`);
   return res.data.data ?? res.data;
 }
 
