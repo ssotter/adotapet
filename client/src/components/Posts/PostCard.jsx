@@ -4,6 +4,10 @@ function badgeLabel(type) {
   return type === "FOUND_LOST" ? "Encontrado/Perdido" : "Adoção";
 }
 
+function statusLabel(status) {
+  return status === "ACTIVE" ? "Ativo" : "Encerrado";
+}
+
 export default function PostCard({ post }) {
   const cover = post.cover_url; // se você futuramente mandar photos no list, aparece. Por enquanto usaremos placeholder.
   const title =
@@ -36,9 +40,25 @@ export default function PostCard({ post }) {
             <div className="text-sm text-gray-600">{post.neighborhood}</div>
           </div>
 
-          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
-            {badgeLabel(post.type)}
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            {post.status ? (
+              <span
+                className={`text-xs px-2 py-1 rounded-full font-medium
+                  ${
+                    post.status === "ACTIVE"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-200 text-gray-700"
+                  }
+                `}
+              >
+                {statusLabel(post.status)}
+              </span>
+            ) : null}
+
+            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+              {badgeLabel(post.type)}
+            </span>
+          </div>
         </div>
 
         <div className="mt-3 text-sm text-gray-700 grid grid-cols-2 gap-2">

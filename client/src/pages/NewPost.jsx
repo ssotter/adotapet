@@ -213,7 +213,7 @@ export default function NewPost() {
 
           {form.type === "FOUND_LOST" && (
             <div>
-              <label className="text-sm block mb-1">Data do evento</label>
+              <label className="text-sm block mb-1">Data que foi encontrado(a)</label>
               <input
                 type="date"
                 name="eventDate"

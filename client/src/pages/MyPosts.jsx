@@ -1,6 +1,37 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { listMyPosts } from "../api/posts";
+
+function statusLabel(status) {
+  if (status === "ACTIVE") return "Ativo";
+  if (status === "RESOLVED") return "Encerrado";
+  return status || "";
+}
+
+function MyPostsSkeleton({ count = 6 }) {
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
+      {Array.from({ length: count }).map((_, idx) => (
+        <div
+          key={idx}
+          className="rounded-xl border bg-white overflow-hidden"
+          aria-hidden="true"
+        >
+          <div className="h-40 bg-gray-100" />
+          <div className="p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="h-4 bg-gray-100 rounded w-40" />
+              <div className="h-6 bg-gray-100 rounded-full w-20" />
+            </div>
+            <div className="h-3 bg-gray-100 rounded w-48 mt-3" />
+            <div className="h-3 bg-gray-100 rounded w-full mt-3" />
+            <div className="h-3 bg-gray-100 rounded w-10/12 mt-2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function MyPosts() {
   const [items, setItems] = useState([]);
@@ -20,6 +51,18 @@ export default function MyPosts() {
     })();
   }, []);
 
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      const aActive = a.status === "ACTIVE";
+      const bActive = b.status === "ACTIVE";
+      if (aActive !== bActive) return aActive ? -1 : 1;
+
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [items]);
+
   return (
     <div className="max-w-6xl mx-auto p-4">
       <div className="flex items-center justify-between gap-3 mb-4">
@@ -38,7 +81,7 @@ export default function MyPosts() {
       )}
 
       {loading ? (
-        <p className="text-gray-600">Carregando...</p>
+        <MyPostsSkeleton count={6} />
       ) : items.length === 0 ? (
         <div className="p-6 rounded-xl border bg-white">
           <p className="text-gray-700">Você ainda não criou nenhum anúncio.</p>
@@ -51,7 +94,7 @@ export default function MyPosts() {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((p) => (
+          {sortedItems.map((p) => (
             <Link
               key={p.id}
               to={`/posts/${p.id}`}
@@ -76,19 +119,21 @@ export default function MyPosts() {
                   <h2 className="font-semibold truncate">
                     {p.name || "Sem nome"}
                   </h2>
+
                   <span
-                    className={`text-xs px-2 py-1 rounded-full ${
+                    className={`text-xs px-2 py-1 rounded-full font-medium ${
                       p.status === "ACTIVE"
                         ? "bg-green-100 text-green-800"
                         : "bg-gray-100 text-gray-700"
                     }`}
                   >
-                    {p.status}
+                    {statusLabel(p.status)}
                   </span>
                 </div>
 
                 <p className="text-sm text-gray-600 mt-1">
-                  {p.neighborhood} • {p.type === "ADOPTION" ? "Adoção" : "Encontrado/Perdido"}
+                  {p.neighborhood} •{" "}
+                  {p.type === "ADOPTION" ? "Adoção" : "Encontrado/Perdido"}
                 </p>
 
                 {p.description && (

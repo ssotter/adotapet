@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Container from "../components/Layout/Container";
 import { listReceivedRequests, updateVisitRequest } from "../api/visitRequests";
 import { Link } from "react-router-dom";
@@ -23,6 +23,56 @@ function StatusBadge({ status }) {
       {statusLabel(status)}
     </span>
   );
+}
+
+function RequestsSkeleton({ count = 4 }) {
+  return (
+    <div className="space-y-3 animate-pulse">
+      {Array.from({ length: count }).map((_, idx) => (
+        <div
+          key={idx}
+          className="rounded-2xl border bg-white p-4 flex items-start justify-between gap-4"
+          aria-hidden="true"
+        >
+          <div className="min-w-0 w-full">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="h-4 bg-gray-100 rounded w-40" />
+              <div className="h-6 bg-gray-100 rounded-full w-32" />
+            </div>
+
+            <div className="mt-2 h-3 bg-gray-100 rounded w-56" />
+
+            <div className="mt-4 space-y-2">
+              <div className="h-3 bg-gray-100 rounded w-full" />
+              <div className="h-3 bg-gray-100 rounded w-11/12" />
+              <div className="h-3 bg-gray-100 rounded w-10/12" />
+            </div>
+
+            <div className="mt-3 h-3 bg-gray-100 rounded w-40" />
+          </div>
+
+          <div className="flex gap-2 flex-shrink-0">
+            <div className="h-10 w-24 bg-gray-100 rounded-lg" />
+            <div className="h-10 w-24 bg-gray-100 rounded-lg" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function getCreatedTime(r) {
+  const raw = r?.created_at ?? r?.createdAt ?? null;
+  const t = raw ? new Date(raw).getTime() : 0;
+  return Number.isFinite(t) ? t : 0;
+}
+
+function statusRank(status) {
+  // PENDING primeiro (mais importante), depois APPROVED, depois REJECTED
+  if (status === "PENDING") return 0;
+  if (status === "APPROVED") return 1;
+  if (status === "REJECTED") return 2;
+  return 99;
 }
 
 export default function ReceivedRequests() {
@@ -62,6 +112,17 @@ export default function ReceivedRequests() {
     load();
   }, []);
 
+  const sortedItems = useMemo(() => {
+    const list = Array.isArray(items) ? [...items] : [];
+    return list.sort((a, b) => {
+      const sr = statusRank(a.status) - statusRank(b.status);
+      if (sr !== 0) return sr;
+
+      // mais recentes primeiro
+      return getCreatedTime(b) - getCreatedTime(a);
+    });
+  }, [items]);
+
   return (
     <Container>
       <div className="flex items-end justify-between gap-4 flex-wrap">
@@ -74,28 +135,33 @@ export default function ReceivedRequests() {
 
         <button
           onClick={load}
-          className="px-3 py-2 rounded-lg text-sm border bg-white hover:bg-gray-50"
+          className="px-3 py-2 rounded-lg text-sm border bg-white hover:bg-gray-50 disabled:opacity-60"
+          disabled={loading}
         >
-          Atualizar
+          {loading ? "Atualizando..." : "Atualizar"}
         </button>
       </div>
 
       <div className="mt-6">
         {loading ? (
-          <div className="p-4 rounded-2xl border bg-white text-sm text-gray-500">
-            Carregando...
-          </div>
+          <RequestsSkeleton count={4} />
         ) : err ? (
           <div className="p-4 rounded-2xl border bg-white text-sm text-red-600">
             {String(err)}
           </div>
-        ) : items.length === 0 ? (
-          <div className="p-4 rounded-2xl border bg-white text-sm text-gray-500">
-            Nenhuma solicitação recebida até o momento.
+        ) : sortedItems.length === 0 ? (
+          <div className="p-6 rounded-2xl border bg-white">
+            <div className="text-sm text-gray-700 font-medium">
+              Nenhuma solicitação recebida até o momento.
+            </div>
+            <div className="text-sm text-gray-600 mt-1">
+              Quando alguém solicitar uma visita em um dos seus anúncios, ela vai
+              aparecer aqui.
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
-            {items.map((r) => (
+            {sortedItems.map((r) => (
               <div
                 key={r.id}
                 className="rounded-2xl border bg-white p-4 flex items-start justify-between gap-4"
@@ -138,14 +204,14 @@ export default function ReceivedRequests() {
                       disabled={actionLoadingId === r.id}
                       className="px-3 py-2 rounded-lg text-sm border bg-white hover:bg-gray-50 disabled:opacity-60"
                     >
-                      Rejeitar
+                      {actionLoadingId === r.id ? "..." : "Rejeitar"}
                     </button>
                     <button
                       onClick={() => handleUpdate(r.id, "APPROVED")}
                       disabled={actionLoadingId === r.id}
                       className="px-3 py-2 rounded-lg text-sm bg-black text-white disabled:opacity-60"
                     >
-                      Aprovar
+                      {actionLoadingId === r.id ? "..." : "Aprovar"}
                     </button>
                   </div>
                 ) : (
