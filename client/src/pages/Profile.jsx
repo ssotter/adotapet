@@ -6,7 +6,10 @@ import { useAuth } from "../store/auth";
 function initialsFrom(user) {
   const raw = (user?.name || user?.email || "U").trim();
   const parts = raw.split(/\s+/).filter(Boolean);
-  const ini = parts.slice(0, 2).map(p => p[0]?.toUpperCase()).join("");
+  const ini = parts
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("");
   return ini || "U";
 }
 
@@ -37,6 +40,7 @@ export default function Profile() {
 
       alert("Avatar atualizado com sucesso!");
       setFile(null);
+      setPreview(null);
     } catch (e) {
       alert(e?.response?.data?.error || "Falha ao enviar avatar");
     } finally {
@@ -89,8 +93,7 @@ export default function Profile() {
           {loading ? "Enviando..." : "Salvar avatar"}
         </button>
 
-        <div className="mt-3 text-xs text-gray-500">
-        </div>
+        <div className="mt-3 text-xs text-gray-500"></div>
       </div>
     </Container>
   );

@@ -1,15 +1,19 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Navbar from "./components/Layout/Navbar";
-import Home from "./pages/Home";
-import PostDetail from "./pages/PostDetail";
-import ReceivedRequests from "./pages/ReceivedRequests";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Profile from "./pages/Profile";
-import NewPost from "./pages/NewPost";
-import MyPosts from "./pages/MyPosts";
-import EditPost from "./pages/EditPost";
+import Navbar from "./components/Layout/Navbar.jsx";
+import Home from "./pages/Home.jsx";
+import PostDetail from "./pages/PostDetail.jsx";
+import ReceivedRequests from "./pages/ReceivedRequests.jsx";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Profile from "./pages/Profile.jsx";
+import NewPost from "./pages/NewPost.jsx";
+import MyPosts from "./pages/MyPosts.jsx";
+import EditPost from "./pages/EditPost.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
+import ChangePassword from "./pages/ChangePassword.jsx";
+
 
 export default function App() {
   return (
@@ -33,6 +37,16 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ✅ trocar senha (logado) */}
+        <Route
+          path="/change-password"
+          element={
+            <ProtectedRoute>
+              <ChangePassword />
             </ProtectedRoute>
           }
         />
@@ -63,6 +77,10 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* ✅ reset senha (público) */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

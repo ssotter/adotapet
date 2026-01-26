@@ -113,6 +113,15 @@ export default function PostDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // ✅ NOVO: só abre modal se estiver logado
+  function handleOpenRequestVisit() {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    setOpenModal(true);
+  }
+
   async function handleRequestVisit(message) {
     if (!user) {
       navigate("/login");
@@ -145,7 +154,7 @@ export default function PostDetail() {
     } catch (e) {
       setContact(null);
       setContactError(
-        e?.response?.data?.error || "Não foi possível obter o contato"
+        e?.response?.data?.error || "Não foi possível obter o contato",
       );
     } finally {
       setActionLoading(false);
@@ -154,7 +163,7 @@ export default function PostDetail() {
 
   async function handleResolvePost() {
     const confirmed = window.confirm(
-      "Tem certeza que deseja encerrar este anúncio?"
+      "Tem certeza que deseja encerrar este anúncio?",
     );
     if (!confirmed) return;
 
@@ -220,7 +229,10 @@ export default function PostDetail() {
         <div className="flex gap-2 flex-wrap">
           {!isOwner && (
             <button
-              onClick={() => setOpenModal(true)}
+              onClick={handleOpenRequestVisit}
+              title={
+                !user ? "Para solicitar uma visita, primeiro faça login." : ""
+              }
               className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium"
             >
               Solicitar visita
@@ -230,10 +242,14 @@ export default function PostDetail() {
           {!isOwner && (
             <button
               onClick={handleGetContact}
-              className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium disabled:opacity-50"
-              disabled={actionLoading}
+              title={
+                !user
+                  ? "Para ver o contato do anunciante, primeiro faça login."
+                  : ""
+              }
+              className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium"
             >
-              {actionLoading ? "Carregando..." : "Ver contato"}
+              Ver contato
             </button>
           )}
 
@@ -261,7 +277,6 @@ export default function PostDetail() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* ✅ agora vai abrir na capa */}
         <PhotoCarousel photos={orderedPhotos} title={post.name} />
 
         <div className="rounded-2xl border bg-white p-4 space-y-3">
@@ -321,7 +336,7 @@ export default function PostDetail() {
                     className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium"
                     href={`https://wa.me/${String(contact.whatsapp).replace(
                       /\D/g,
-                      ""
+                      "",
                     )}`}
                     target="_blank"
                     rel="noreferrer"
