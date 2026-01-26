@@ -94,6 +94,88 @@ Endpoints principais: - POST /auth/register - POST /auth/login - GET /me
 
 ------------------------------------------------------------------------
 
+## 🔐 Funcionalidades de Autenticação
+
+### ✅ Cadastro e Login
+- Registro de usuários com senha criptografada (bcrypt)
+- Login com geração de token JWT
+- Persistência de sessão via `localStorage`
+
+### ✅ Proteção de Rotas
+- Rotas sensíveis protegidas via `ProtectedRoute`
+- Redirecionamento automático para `/login` quando não autenticado
+- Retorno ao fluxo correto após login
+
+### ✅ Troca de Senha (Usuário Logado)
+- Tela dedicada `/change-password`
+- Confirmação da senha atual
+- Validação de nova senha
+- Logout automático após troca (segurança)
+
+### ✅ Reset de Senha (Esqueci minha senha)
+- Solicitação de reset via e-mail
+- Geração de token temporário
+- Redefinição segura de senha
+- Redirecionamento automático após sucesso
+
+------------------------------------------------------------------------
+
+## 🐶 Funcionalidades de Anúncios
+
+### 📌 Cadastro de Pet
+- Tipo: **Adoção** ou **Encontrado/Perdido**
+- Espécie: Cão ou Gato
+- Informações completas (idade, peso, cor, porte, etc.)
+- Upload de múltiplas fotos
+- Definição de foto de capa
+
+### 📌 Listagem e Visualização
+- Home com cards padronizados
+- Badges visuais para tipo do anúncio
+- Página de detalhe com carrossel de fotos
+- Layout responsivo
+
+### 📌 Meus Anúncios
+- Listagem exclusiva do usuário logado
+- Ordenação por status e data
+- Edição e encerramento de anúncios
+
+------------------------------------------------------------------------
+
+## 🤝 Solicitação de Visita
+
+- Usuários podem solicitar visita a um pet
+- Modal com mensagem personalizada
+- **Usuário não logado:**  
+  - Tooltip informativo  
+  - Redirecionamento para login  
+- Anunciante pode aprovar ou rejeitar solicitações
+- Contato liberado apenas após aprovação
+
+------------------------------------------------------------------------
+
+## 👤 Perfil do Usuário
+
+- Visualização de dados pessoais
+- Upload e atualização de avatar
+- Avatar refletido imediatamente no Navbar
+- Inicial gerada automaticamente quando não há foto
+
+------------------------------------------------------------------------
+
+## 🗄️ Modelagem de Dados (Resumo)
+
+- **users**
+- **pet_posts**
+- **pet_photos**
+- **visit_requests**
+- **neighborhoods**
+- **password_reset_tokens**
+
+Banco normalizado com chaves estrangeiras e constraints de integridade.
+
+------------------------------------------------------------------------
+
 ## 🗺️ Escopo inicial
 
 Cidade atendida: - Rio Grande / RS

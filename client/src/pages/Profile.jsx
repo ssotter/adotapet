@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import { uploadMyAvatar } from "../api/users";
@@ -16,34 +16,47 @@ function initialsFrom(user) {
 
 export default function Profile() {
   const { user, setUser } = useAuth();
+  const fileRef = useRef(null);
+
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
 
   const initials = useMemo(() => initialsFrom(user), [user]);
 
   function onPick(e) {
     const f = e.target.files?.[0];
     if (!f) return;
+
     setFile(f);
     setPreview(URL.createObjectURL(f));
+    setMsg("");
+    setErr("");
   }
 
   async function onUpload() {
     if (!file) return;
 
     setLoading(true);
+    setMsg("");
+    setErr("");
+
     try {
       const updatedUser = await uploadMyAvatar(file);
 
-      // atualiza o user global -> Navbar atualiza na hora
+      // atualiza o user global
       setUser(updatedUser);
 
-      alert("Avatar atualizado com sucesso!");
+      setMsg("Avatar atualizado com sucesso!");
       setFile(null);
       setPreview(null);
+
+      if (fileRef.current) fileRef.current.value = "";
     } catch (e) {
-      alert(e?.response?.data?.error || "Falha ao enviar avatar");
+      setErr(e?.response?.data?.error || "Falha ao enviar avatar");
     } finally {
       setLoading(false);
     }
@@ -77,13 +90,29 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="mt-5">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={onPick}
-            className="block w-full text-sm"
-          />
+        {/* input real escondido */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={onPick}
+          className="hidden"
+        />
+
+        <div className="mt-5 flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium"
+          >
+            Escolher foto
+          </button>
+
+          {file?.name ? (
+            <span className="text-sm text-gray-600 truncate max-w-[260px]">
+              {file.name}
+            </span>
+          ) : null}
         </div>
 
         <button
@@ -94,10 +123,20 @@ export default function Profile() {
           {loading ? "Enviando..." : "Salvar avatar"}
         </button>
 
-        <div className="mt-3 text-xs text-gray-500"></div>
+        {msg && (
+          <div className="mt-3 p-3 rounded-xl border bg-green-50 text-sm text-green-700">
+            {msg}
+          </div>
+        )}
+
+        {err && (
+          <div className="mt-3 p-3 rounded-xl border bg-red-50 text-sm text-red-600">
+            {err}
+          </div>
+        )}
       </div>
 
-      {/* ✅ NOVO: Segurança */}
+      {/* Segurança */}
       <div className="mt-4 rounded-2xl border bg-white p-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
