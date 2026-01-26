@@ -1,10 +1,12 @@
 import { Router } from "express";
+import multer from "multer";
+
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
-import { createPetPostSchema, updatePetPostSchema } from "../validators/pet-posts.validators.js";
-import { getPostContact } from "../controllers/pet-posts.controller.js";
-import multer from "multer";
-import { uploadPostPhotos } from "../controllers/pet-posts.controller.js";
+import {
+  createPetPostSchema,
+  updatePetPostSchema,
+} from "../validators/pet-posts.validators.js";
 
 import {
   createPost,
@@ -13,6 +15,10 @@ import {
   listMyPosts,
   updatePost,
   setPostStatus,
+  uploadPostPhotos,
+  setPostCover,
+  deletePostPhoto,
+  getPostContact,
 } from "../controllers/pet-posts.controller.js";
 
 const router = Router();
@@ -26,8 +32,18 @@ router.get("/me/mine", authMiddleware, listMyPosts);
 router.post("/", authMiddleware, validate(createPetPostSchema), createPost);
 router.put("/:id", authMiddleware, validate(updatePetPostSchema), updatePost);
 router.patch("/:id/status", authMiddleware, setPostStatus);
+
+router.post(
+  "/:id/photos",
+  authMiddleware,
+  upload.array("photos", 6),
+  uploadPostPhotos
+);
+
+router.patch("/:id/cover", authMiddleware, setPostCover);
+router.delete("/:id/photos/:photoId", authMiddleware, deletePostPhoto);
+
 router.get("/:id/contact", authMiddleware, getPostContact);
-router.post("/:id/photos", authMiddleware, upload.array("photos", 6),uploadPostPhotos);
 
 // público
 router.get("/:id", getPostById);

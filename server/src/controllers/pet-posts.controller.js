@@ -26,23 +26,14 @@ export async function createPost(req, res) {
   } = req.body;
 
   // Regra: event_date obrigatório em FOUND_LOST
-  if (
-    type === "FOUND_LOST" &&
-    (!eventDate || String(eventDate).trim() === "")
-  ) {
-    return res
-      .status(400)
-      .json({ error: "eventDate é obrigatório para FOUND_LOST" });
+  if (type === "FOUND_LOST" && (!eventDate || String(eventDate).trim() === "")) {
+    return res.status(400).json({ error: "eventDate é obrigatório para FOUND_LOST" });
   }
 
   // Valida neighborhoodId existe
-  const nb = await pool.query("SELECT id FROM neighborhoods WHERE id = $1", [
-    neighborhoodId,
-  ]);
+  const nb = await pool.query("SELECT id FROM neighborhoods WHERE id = $1", [neighborhoodId]);
   if (nb.rows.length === 0) {
-    return res
-      .status(400)
-      .json({ error: "Bairro inválido (neighborhoodId não encontrado)" });
+    return res.status(400).json({ error: "Bairro inválido (neighborhoodId não encontrado)" });
   }
 
   const result = await pool.query(
@@ -50,7 +41,7 @@ export async function createPost(req, res) {
       (owner_id, type, status, species, name, color, age_months, weight_kg, sex, size, neighborhood_id, description, event_date)
      VALUES
       ($1, $2, 'ACTIVE', $3, NULLIF($4, ''), $5, $6, $7, $8, $9, $10, $11, $12)
-     RETURNING id, owner_id, type, status, species, name, color, age_months, weight_kg, sex, size, neighborhood_id, description, event_date, created_at`,
+     RETURNING id, owner_id, type, status, species, name, color, age_months, weight_kg, sex, size, neighborhood_id, description, event_date, created_at, cover_photo_id`,
     [
       ownerId,
       type,
@@ -64,16 +55,14 @@ export async function createPost(req, res) {
       neighborhoodId,
       description,
       eventDate || null,
-    ],
+    ]
   );
 
   return res.status(201).json({ data: result.rows[0] });
 }
 
 export async function listPosts(req, res) {
-  // filtros
-  const { type, neighborhoodId, color, ageMin, ageMax, weightMin, weightMax } =
-    req.query;
+  const { type, neighborhoodId, color, ageMin, ageMax, weightMin, weightMax } = req.query;
 
   const where = ["p.status = 'ACTIVE'"];
   const params = [];
@@ -123,12 +112,21 @@ export async function listPosts(req, res) {
       p.description, p.event_date, p.created_at,
       n.name AS neighborhood,
       p.neighborhood_id,
-      (
-        SELECT ph.url
-        FROM pet_photos ph
-        WHERE ph.post_id = p.id
-        ORDER BY ph.created_at ASC
-        LIMIT 1
+      p.cover_photo_id,
+      COALESCE(
+        (
+          SELECT ph.url
+          FROM pet_photos ph
+          WHERE ph.id = p.cover_photo_id AND ph.post_id = p.id
+          LIMIT 1
+        ),
+        (
+          SELECT ph2.url
+          FROM pet_photos ph2
+          WHERE ph2.post_id = p.id
+          ORDER BY ph2.created_at ASC
+          LIMIT 1
+        )
       ) AS cover_url
     FROM pet_posts p
     JOIN neighborhoods n ON n.id = p.neighborhood_id
@@ -150,11 +148,12 @@ export async function getPostById(req, res) {
       p.age_months, p.weight_kg, p.sex, p.size,
       p.description, p.event_date, p.created_at,
       n.name AS neighborhood,
-      p.neighborhood_id
+      p.neighborhood_id,
+      p.cover_photo_id
      FROM pet_posts p
      JOIN neighborhoods n ON n.id = p.neighborhood_id
      WHERE p.id = $1`,
-    [id],
+    [id]
   );
 
   if (postResult.rows.length === 0) {
@@ -165,52 +164,42 @@ export async function getPostById(req, res) {
 
   const photosResult = await pool.query(
     "SELECT id, url, created_at FROM pet_photos WHERE post_id = $1 ORDER BY created_at ASC",
-    [id],
+    [id]
   );
 
   // ==========================
-  // Liberação do WhatsApp
+  // Liberação do WhatsApp (mantém sua lógica atual)
   // ==========================
   let owner_whatsapp = null;
 
-  // tenta ler token (opcional)
   const authHeader = req.headers.authorization;
   let loggedUserId = null;
 
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.split(" ")[1];
     try {
-      const decoded = verifyToken(token); // { id, email, iat, exp }
+      const decoded = verifyToken(token);
       loggedUserId = decoded?.id ?? null;
     } catch {
-      // token inválido -> mantém loggedUserId null (não libera contato)
       loggedUserId = null;
     }
   }
 
   if (loggedUserId) {
-    // 1) Dono do anúncio sempre pode ver
     if (loggedUserId === post.owner_id) {
-      const owner = await pool.query(
-        "SELECT whatsapp FROM users WHERE id = $1",
-        [post.owner_id],
-      );
+      const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [post.owner_id]);
       owner_whatsapp = owner.rows[0]?.whatsapp ?? null;
     } else {
-      // 2) Interessado só vê se tiver solicitação APPROVED
       const approved = await pool.query(
         `SELECT id
          FROM visit_requests
          WHERE post_id = $1 AND requester_id = $2 AND status = 'APPROVED'
          LIMIT 1`,
-        [id, loggedUserId],
+        [id, loggedUserId]
       );
 
       if (approved.rows.length > 0) {
-        const owner = await pool.query(
-          "SELECT whatsapp FROM users WHERE id = $1",
-          [post.owner_id],
-        );
+        const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [post.owner_id]);
         owner_whatsapp = owner.rows[0]?.whatsapp ?? null;
       }
     }
@@ -235,77 +224,70 @@ export async function listMyPosts(req, res) {
       p.description, p.event_date, p.created_at,
       n.name AS neighborhood,
       p.neighborhood_id,
-      (
-        SELECT ph.url
-        FROM pet_photos ph
-        WHERE ph.post_id = p.id
-        ORDER BY ph.created_at ASC
-        LIMIT 1
+      p.cover_photo_id,
+      COALESCE(
+        (
+          SELECT ph.url
+          FROM pet_photos ph
+          WHERE ph.id = p.cover_photo_id AND ph.post_id = p.id
+          LIMIT 1
+        ),
+        (
+          SELECT ph2.url
+          FROM pet_photos ph2
+          WHERE ph2.post_id = p.id
+          ORDER BY ph2.created_at ASC
+          LIMIT 1
+        )
       ) AS cover_url
      FROM pet_posts p
      JOIN neighborhoods n ON n.id = p.neighborhood_id
      WHERE p.owner_id = $1
      ORDER BY p.created_at DESC`,
-    [ownerId],
+    [ownerId]
   );
 
-  return res.json(result.rows);
+  return res.json({ data: result.rows });
 }
 
 export async function updatePost(req, res) {
   const ownerId = req.user.id;
   const { id } = req.params;
 
-  // Confere se é dono
   const owns = await pool.query(
     "SELECT id, type FROM pet_posts WHERE id = $1 AND owner_id = $2",
-    [id, ownerId],
+    [id, ownerId]
   );
+
   if (owns.rows.length === 0) {
-    return res
-      .status(403)
-      .json({ error: "Você não tem permissão para editar este anúncio" });
+    return res.status(403).json({ error: "Você não tem permissão para editar este anúncio" });
   }
 
   const currentType = owns.rows[0].type;
-
-  // Monta update dinâmico
   const fields = [];
   const params = [];
   let i = 1;
 
   const body = req.body;
-
-  // Se trocar type para FOUND_LOST (ou já for), eventDate pode precisar
   const newType = body.type ?? currentType;
+
   if (
     newType === "FOUND_LOST" &&
     (body.eventDate === undefined ||
       body.eventDate === null ||
       String(body.eventDate).trim() === "")
   ) {
-    // só exige se veio no payload? aqui vamos exigir caso type resulte FOUND_LOST e o post não tenha event_date
-    const hasEvent = await pool.query(
-      "SELECT event_date FROM pet_posts WHERE id = $1",
-      [id],
-    );
+    const hasEvent = await pool.query("SELECT event_date FROM pet_posts WHERE id = $1", [id]);
     const existing = hasEvent.rows[0]?.event_date;
     if (!existing) {
-      return res
-        .status(400)
-        .json({ error: "eventDate é obrigatório para FOUND_LOST" });
+      return res.status(400).json({ error: "eventDate é obrigatório para FOUND_LOST" });
     }
   }
 
-  // neighborhoodId: validar existe
   if (body.neighborhoodId) {
-    const nb = await pool.query("SELECT id FROM neighborhoods WHERE id = $1", [
-      body.neighborhoodId,
-    ]);
+    const nb = await pool.query("SELECT id FROM neighborhoods WHERE id = $1", [body.neighborhoodId]);
     if (nb.rows.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "Bairro inválido (neighborhoodId não encontrado)" });
+      return res.status(400).json({ error: "Bairro inválido (neighborhoodId não encontrado)" });
     }
   }
 
@@ -331,9 +313,7 @@ export async function updatePost(req, res) {
   }
 
   if (fields.length === 0) {
-    return res
-      .status(400)
-      .json({ error: "Nenhum campo enviado para atualização" });
+    return res.status(400).json({ error: "Nenhum campo enviado para atualização" });
   }
 
   params.push(id);
@@ -343,7 +323,7 @@ export async function updatePost(req, res) {
     UPDATE pet_posts
     SET ${fields.join(", ")}, updated_at = now()
     WHERE id = $${i++} AND owner_id = $${i++}
-    RETURNING id, owner_id, type, status, species, name, color, age_months, weight_kg, sex, size, neighborhood_id, description, event_date, updated_at
+    RETURNING id, owner_id, type, status, species, name, color, age_months, weight_kg, sex, size, neighborhood_id, description, event_date, updated_at, cover_photo_id
   `;
 
   const result = await pool.query(sql, params);
@@ -356,9 +336,7 @@ export async function setPostStatus(req, res) {
   const { status } = req.body;
 
   if (!["ACTIVE", "RESOLVED"].includes(status)) {
-    return res
-      .status(400)
-      .json({ error: "status deve ser ACTIVE ou RESOLVED" });
+    return res.status(400).json({ error: "status deve ser ACTIVE ou RESOLVED" });
   }
 
   const result = await pool.query(
@@ -366,13 +344,11 @@ export async function setPostStatus(req, res) {
      SET status = $1, updated_at = now()
      WHERE id = $2 AND owner_id = $3
      RETURNING id, status, updated_at`,
-    [status, id, ownerId],
+    [status, id, ownerId]
   );
 
   if (result.rows.length === 0) {
-    return res
-      .status(403)
-      .json({ error: "Sem permissão ou anúncio não encontrado" });
+    return res.status(403).json({ error: "Sem permissão ou anúncio não encontrado" });
   }
 
   return res.json({ data: result.rows[0] });
@@ -382,11 +358,7 @@ export async function getPostContact(req, res) {
   const requesterId = req.user.id;
   const { id: postId } = req.params;
 
-  // Post existe?
-  const post = await pool.query(
-    "SELECT id, owner_id FROM pet_posts WHERE id = $1",
-    [postId],
-  );
+  const post = await pool.query("SELECT id, owner_id FROM pet_posts WHERE id = $1", [postId]);
 
   if (post.rows.length === 0) {
     return res.status(404).json({ error: "Anúncio não encontrado" });
@@ -394,24 +366,17 @@ export async function getPostContact(req, res) {
 
   const ownerId = post.rows[0].owner_id;
 
-  // Dono sempre pode ver o próprio contato
   if (ownerId === requesterId) {
-    const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [
-      ownerId,
-    ]);
-    return res.json({
-      whatsapp: owner.rows[0]?.whatsapp ?? null,
-      allowed: true,
-    });
+    const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [ownerId]);
+    return res.json({ whatsapp: owner.rows[0]?.whatsapp ?? null, allowed: true });
   }
 
-  // Só libera se houver solicitação APPROVED
   const approved = await pool.query(
     `SELECT id
      FROM visit_requests
      WHERE post_id = $1 AND requester_id = $2 AND status = 'APPROVED'
      LIMIT 1`,
-    [postId, requesterId],
+    [postId, requesterId]
   );
 
   if (approved.rows.length === 0) {
@@ -420,9 +385,7 @@ export async function getPostContact(req, res) {
     });
   }
 
-  const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [
-    ownerId,
-  ]);
+  const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [ownerId]);
 
   return res.json({
     data: { whatsapp: owner.rows[0]?.whatsapp ?? null, allowed: true },
@@ -433,43 +396,136 @@ export async function uploadPostPhotos(req, res) {
   const ownerId = req.user.id;
   const { id: postId } = req.params;
 
-  // valida post e dono
   const post = await pool.query(
-    "SELECT id FROM pet_posts WHERE id = $1 AND owner_id = $2",
-    [postId, ownerId],
+    "SELECT id, cover_photo_id FROM pet_posts WHERE id = $1 AND owner_id = $2",
+    [postId, ownerId]
   );
 
   if (post.rows.length === 0) {
-    return res
-      .status(403)
-      .json({ error: "Sem permissão ou anúncio não encontrado" });
+    return res.status(403).json({ error: "Sem permissão ou anúncio não encontrado" });
   }
 
   if (!req.files || req.files.length === 0) {
-    return res
-      .status(400)
-      .json({ error: "Nenhuma foto enviada (field: photos)" });
+    return res.status(400).json({ error: "Nenhuma foto enviada (field: photos)" });
   }
 
-  // upload para cloudinary + insert no banco
   const uploaded = [];
   for (const file of req.files) {
-    const result = await uploadBufferToCloudinary(
-      file.buffer,
-      "adotapet/posts",
-    );
+    const result = await uploadBufferToCloudinary(file.buffer, "adotapet/posts");
     const url = result.secure_url || result.url;
 
     const saved = await pool.query(
       `INSERT INTO pet_photos (post_id, url)
        VALUES ($1, $2)
        RETURNING id, url, created_at`,
-      [postId, url],
+      [postId, url]
     );
 
     uploaded.push(saved.rows[0]);
   }
 
-  // padrão { data } (B1.3)
+  // ✅ Se ainda não tem capa, define automaticamente a primeira foto enviada como capa
+  const currentCoverId = post.rows[0].cover_photo_id;
+  if (!currentCoverId && uploaded.length > 0) {
+    await pool.query(
+      `UPDATE pet_posts
+       SET cover_photo_id = $1, updated_at = now()
+       WHERE id = $2`,
+      [uploaded[0].id, postId]
+    );
+  }
+
   return res.status(201).json({ data: uploaded });
+}
+
+export async function setPostCover(req, res) {
+  const ownerId = req.user.id;
+  const { id: postId } = req.params;
+  const { photoId } = req.body;
+
+  if (!photoId) {
+    return res.status(400).json({ error: "photoId é obrigatório" });
+  }
+
+  const post = await pool.query(
+    "SELECT id FROM pet_posts WHERE id = $1 AND owner_id = $2",
+    [postId, ownerId]
+  );
+
+  if (post.rows.length === 0) {
+    return res.status(403).json({ error: "Sem permissão ou anúncio não encontrado" });
+  }
+
+  const photo = await pool.query(
+    "SELECT id FROM pet_photos WHERE id = $1 AND post_id = $2",
+    [photoId, postId]
+  );
+
+  if (photo.rows.length === 0) {
+    return res.status(404).json({ error: "Foto não encontrada para este anúncio" });
+  }
+
+  const updated = await pool.query(
+    `UPDATE pet_posts
+     SET cover_photo_id = $1, updated_at = now()
+     WHERE id = $2
+     RETURNING id, cover_photo_id`,
+    [photoId, postId]
+  );
+
+  return res.json({ data: updated.rows[0] });
+}
+
+export async function deletePostPhoto(req, res) {
+  const ownerId = req.user.id;
+  const { id: postId, photoId } = req.params;
+
+  const post = await pool.query(
+    "SELECT id, cover_photo_id FROM pet_posts WHERE id = $1 AND owner_id = $2",
+    [postId, ownerId]
+  );
+
+  if (post.rows.length === 0) {
+    return res.status(403).json({ error: "Sem permissão ou anúncio não encontrado" });
+  }
+
+  const photo = await pool.query(
+    "SELECT id FROM pet_photos WHERE id = $1 AND post_id = $2",
+    [photoId, postId]
+  );
+
+  if (photo.rows.length === 0) {
+    return res.status(404).json({ error: "Foto não encontrada para este anúncio" });
+  }
+
+  const currentCoverId = post.rows[0].cover_photo_id;
+
+  await pool.query("DELETE FROM pet_photos WHERE id = $1 AND post_id = $2", [photoId, postId]);
+
+  if (currentCoverId && currentCoverId === photoId) {
+    const next = await pool.query(
+      `SELECT id
+       FROM pet_photos
+       WHERE post_id = $1
+       ORDER BY created_at ASC
+       LIMIT 1`,
+      [postId]
+    );
+
+    const newCoverId = next.rows[0]?.id ?? null;
+
+    await pool.query(
+      `UPDATE pet_posts
+       SET cover_photo_id = $1, updated_at = now()
+       WHERE id = $2`,
+      [newCoverId, postId]
+    );
+  }
+
+  return res.json({
+    data: {
+      deleted: true,
+      photoId,
+    },
+  });
 }

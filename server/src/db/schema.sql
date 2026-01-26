@@ -81,3 +81,17 @@ CREATE TABLE IF NOT EXISTS visit_requests (
 
   UNIQUE (post_id, requester_id)
 );
+
+-- =========================
+-- ALTER: pet_posts (foto de capa)
+-- =========================
+ALTER TABLE pet_posts
+ADD COLUMN IF NOT EXISTS cover_photo_id UUID NULL;
+
+ALTER TABLE pet_posts
+ADD CONSTRAINT IF NOT EXISTS fk_pet_posts_cover_photo
+FOREIGN KEY (cover_photo_id) REFERENCES pet_photos(id)
+ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_pet_posts_cover_photo_id
+ON pet_posts(cover_photo_id);
