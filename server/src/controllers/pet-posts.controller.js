@@ -64,6 +64,22 @@ export async function createPost(req, res) {
 export async function listPosts(req, res) {
   const { type, neighborhoodId, color, ageMin, ageMax, weightMin, weightMax } = req.query;
 
+  // ==========================
+  // Auth opcional (não quebra público)
+  // ==========================
+  let loggedUserId = null;
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    try {
+      const decoded = verifyToken(token);
+      loggedUserId = decoded?.id ?? null;
+    } catch {
+      loggedUserId = null;
+    }
+  }
+
   const where = ["p.status = 'ACTIVE'"];
   const params = [];
   let i = 1;
@@ -105,6 +121,10 @@ export async function listPosts(req, res) {
     params.push(wMax);
   }
 
+  // Param extra (sempre): userId opcional
+  const userParamIndex = i++;
+  params.push(loggedUserId); // pode ser null
+
   const sql = `
     SELECT
       p.id, p.type, p.status, p.species, p.name, p.color,
@@ -113,6 +133,7 @@ export async function listPosts(req, res) {
       n.name AS neighborhood,
       p.neighborhood_id,
       p.cover_photo_id,
+
       COALESCE(
         (
           SELECT ph.url
@@ -127,7 +148,19 @@ export async function listPosts(req, res) {
           ORDER BY ph2.created_at ASC
           LIMIT 1
         )
-      ) AS cover_url
+      ) AS cover_url,
+
+      CASE
+        WHEN $${userParamIndex}::uuid IS NULL THEN false
+        ELSE EXISTS (
+          SELECT 1
+          FROM favorites f
+          WHERE f.user_id = $${userParamIndex}::uuid
+            AND f.post_id = p.id
+          LIMIT 1
+        )
+      END AS is_favorited
+
     FROM pet_posts p
     JOIN neighborhoods n ON n.id = p.neighborhood_id
     WHERE ${where.join(" AND ")}
@@ -169,7 +202,9 @@ export async function getPostById(req, res) {
 
   // ==========================
   // Liberação do WhatsApp (mantém sua lógica atual)
+  // + Favoritos (auth opcional)
   // ==========================
+  let is_favorited = false;
   let owner_whatsapp = null;
 
   const authHeader = req.headers.authorization;
@@ -185,7 +220,17 @@ export async function getPostById(req, res) {
     }
   }
 
+  // ✅ Se estiver logado, calcula favorito
   if (loggedUserId) {
+    const fav = await pool.query(
+      `SELECT 1
+       FROM favorites
+       WHERE user_id = $1 AND post_id = $2
+       LIMIT 1`,
+      [loggedUserId, id]
+    );
+    is_favorited = fav.rows.length > 0;
+
     if (loggedUserId === post.owner_id) {
       const owner = await pool.query("SELECT whatsapp FROM users WHERE id = $1", [post.owner_id]);
       owner_whatsapp = owner.rows[0]?.whatsapp ?? null;
@@ -210,6 +255,7 @@ export async function getPostById(req, res) {
       ...post,
       photos: photosResult.rows,
       owner_whatsapp,
+      is_favorited,
     },
   });
 }
