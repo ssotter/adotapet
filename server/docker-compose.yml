@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: adotapet-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: adotapet
+    ports:
+      - "5432:5432"
+    volumes:
+      - adotapet_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d adotapet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: adotapet-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgres://postgres:123456@db:5432/adotapet
+      JWT_SECRET: troque-por-um-segredo-bem-forte
+      JWT_EXPIRES_IN: 7d
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "3001:3001"
+
+volumes:
+  adotapet_db_data:
