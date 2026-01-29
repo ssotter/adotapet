@@ -1,77 +1,9 @@
-// server/src/controllers/favorites.controller.js
 import { pool } from "../db/connection.js";
 
-export async function addFavorite(req, res, next) {
-  try {
-    const userId = req.user.id;
-    const { postId } = req.params;
-
-    const result = await pool.query(
-      `
-      INSERT INTO favorites (user_id, post_id)
-      VALUES ($1, $2)
-      ON CONFLICT (user_id, post_id) DO NOTHING
-      RETURNING id, user_id, post_id, created_at
-      `,
-      [userId, postId]
-    );
-
-    // Idempotente: se já existia, retorna OK do mesmo jeito
-    if (result.rowCount === 0) {
-      return res.status(200).json({ data: { favorited: true } });
-    }
-
-    return res.status(201).json({
-      data: { favorited: true, favorite: result.rows[0] },
-    });
-  } catch (err) {
-    return next(err);
-  }
-}
-
-export async function removeFavorite(req, res, next) {
-  try {
-    const userId = req.user.id;
-    const { postId } = req.params;
-
-    const result = await pool.query(
-      `
-      DELETE FROM favorites
-      WHERE user_id = $1 AND post_id = $2
-      RETURNING id
-      `,
-      [userId, postId]
-    );
-
-    // Idempotente
-    return res.status(200).json({
-      data: { favorited: false, removed: result.rowCount > 0 },
-    });
-  } catch (err) {
-    return next(err);
-  }
-}
-
-export async function listFavoriteIds(req, res, next) {
-  try {
-    const userId = req.user.id;
-
-    const result = await pool.query(
-      `
-      SELECT post_id
-      FROM favorites
-      WHERE user_id = $1
-      ORDER BY created_at DESC
-      `,
-      [userId]
-    );
-
-    return res.status(200).json({ data: result.rows.map((r) => r.post_id) });
-  } catch (err) {
-    return next(err);
-  }
-}
-
+/**
+ * GET /favorites
+ * Lista os posts favoritados pelo usuário logado
+ */
 export async function listFavorites(req, res, next) {
   try {
     const userId = req.user.id;
@@ -80,7 +12,6 @@ export async function listFavorites(req, res, next) {
       `
       SELECT
         p.id,
-        p.owner_id,
         p.type,
         p.status,
         p.species,
@@ -90,37 +21,121 @@ export async function listFavorites(req, res, next) {
         p.weight_kg,
         p.sex,
         p.size,
-        p.neighborhood_id,
-        n.name AS neighborhood_name,
         p.description,
         p.event_date,
-        p.cover_photo_id,
         p.created_at,
-        p.updated_at,
 
+        n.name AS neighborhood,
+        p.neighborhood_id,
+        p.cover_photo_id,
+
+        -- fotos
         COALESCE(
-          JSON_AGG(
-            JSON_BUILD_OBJECT(
+          json_agg(
+            json_build_object(
               'id', ph.id,
-              'url', ph.url
+              'url', ph.url,
+              'created_at', ph.created_at
             )
           ) FILTER (WHERE ph.id IS NOT NULL),
-          '[]'::json
+          '[]'
         ) AS photos
 
       FROM favorites f
       JOIN pet_posts p ON p.id = f.post_id
       JOIN neighborhoods n ON n.id = p.neighborhood_id
       LEFT JOIN pet_photos ph ON ph.post_id = p.id
+
       WHERE f.user_id = $1
-      GROUP BY p.id, n.name
-      ORDER BY f.created_at DESC
+        AND p.status = 'ACTIVE'
+
+      GROUP BY
+        p.id,
+        n.name,
+        p.neighborhood_id,
+        p.cover_photo_id
+
+      ORDER BY p.created_at DESC
       `,
       [userId]
     );
 
-    return res.status(200).json({ data: result.rows });
+    return res.json({ data: result.rows });
   } catch (err) {
-    return next(err);
+    console.error("❌ Erro listFavorites:", err);
+    next(err);
+  }
+}
+
+/**
+ * GET /favorites/ids
+ * Retorna apenas os IDs dos posts favoritados
+ */
+export async function listFavoriteIds(req, res, next) {
+  try {
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      `
+      SELECT post_id
+      FROM favorites
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    return res.json({
+      data: result.rows.map((r) => r.post_id),
+    });
+  } catch (err) {
+    console.error("❌ Erro listFavoriteIds:", err);
+    next(err);
+  }
+}
+
+/**
+ * POST /favorites/:postId
+ */
+export async function favoritePost(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const { postId } = req.params;
+
+    await pool.query(
+      `
+      INSERT INTO favorites (user_id, post_id)
+      VALUES ($1, $2)
+      ON CONFLICT DO NOTHING
+      `,
+      [userId, postId]
+    );
+
+    return res.status(201).json({ data: { favorited: true } });
+  } catch (err) {
+    console.error("❌ Erro favoritePost:", err);
+    next(err);
+  }
+}
+
+/**
+ * DELETE /favorites/:postId
+ */
+export async function unfavoritePost(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const { postId } = req.params;
+
+    await pool.query(
+      `
+      DELETE FROM favorites
+      WHERE user_id = $1 AND post_id = $2
+      `,
+      [userId, postId]
+    );
+
+    return res.json({ data: { favorited: false } });
+  } catch (err) {
+    console.error("❌ Erro unfavoritePost:", err);
+    next(err);
   }
 }

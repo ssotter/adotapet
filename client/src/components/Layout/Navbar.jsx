@@ -65,6 +65,9 @@ export default function Navbar() {
 
               <NavItem to="/posts/new">Cadastrar pet</NavItem>
 
+              {/* ✅ NOVO: favoritos */}
+              <NavItem to="/favorites">❤️ Favoritos</NavItem>
+
               {/* ✅ dono: solicitações recebidas */}
               <NavItem to="/requests">Solicitações</NavItem>
 

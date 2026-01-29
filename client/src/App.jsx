@@ -14,6 +14,7 @@ import EditPost from "./pages/EditPost.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import ChangePassword from "./pages/ChangePassword.jsx";
+import Favorites from "./pages/Favorites.jsx";
 
 export default function App() {
   return (
@@ -85,6 +86,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <EditPost />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/favorites"
+          element={
+            <ProtectedRoute>
+              <Favorites />
             </ProtectedRoute>
           }
         />

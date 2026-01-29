@@ -98,3 +98,24 @@ export async function setPostStatus(postId, status) {
   const res = await api.patch(`/posts/${postId}/status`, { status });
   return res.data.data;
 }
+
+// ✅ FAVORITOS
+export async function favoritePost(postId) {
+  const res = await api.post(`/favorites/${postId}`);
+  return res.data.data ?? res.data;
+}
+
+export async function unfavoritePost(postId) {
+  const res = await api.delete(`/favorites/${postId}`);
+  return res.data.data ?? res.data;
+}
+
+export async function listFavorites() {
+  const res = await api.get("/favorites");
+  return res.data.data ?? res.data;
+}
+
+export async function listFavoriteIds() {
+  const res = await api.get("/favorites/ids");
+  return res.data.data ?? res.data;
+}
