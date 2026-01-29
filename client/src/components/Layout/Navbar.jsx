@@ -39,9 +39,7 @@ function Avatar({ user }) {
           className="w-full h-full object-cover"
         />
       ) : (
-        <span className="text-sm font-semibold text-gray-700">
-          {initials}
-        </span>
+        <span className="text-sm font-semibold text-gray-700">{initials}</span>
       )}
     </div>
   );
@@ -65,12 +63,14 @@ export default function Navbar() {
             <>
               <NavItem to="/my-posts">Meus anúncios</NavItem>
 
-              {/* Mesmo padrão visual dos demais */}
               <NavItem to="/posts/new">Cadastrar pet</NavItem>
 
+              {/* ✅ dono: solicitações recebidas */}
               <NavItem to="/requests">Solicitações</NavItem>
 
-              {/* Avatar */}
+              {/* ✅ requester: minhas solicitações */}
+              <NavItem to="/my-requests">Minhas solicitações</NavItem>
+
               <button
                 onClick={() => navigate("/profile")}
                 className="ml-1 rounded-xl hover:bg-white/60 p-1"

@@ -3,6 +3,7 @@ import Navbar from "./components/Layout/Navbar.jsx";
 import Home from "./pages/Home.jsx";
 import PostDetail from "./pages/PostDetail.jsx";
 import ReceivedRequests from "./pages/ReceivedRequests.jsx";
+import MyVisitRequests from "./pages/MyVisitRequests.jsx"; // ✅ NOVO
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -14,7 +15,6 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import ChangePassword from "./pages/ChangePassword.jsx";
 
-
 export default function App() {
   return (
     <BrowserRouter>
@@ -23,11 +23,22 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/posts/:id" element={<PostDetail />} />
 
+        {/* ✅ solicitações recebidas (dono do pet) */}
         <Route
           path="/requests"
           element={
             <ProtectedRoute>
               <ReceivedRequests />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ✅ minhas solicitações (quem pediu visita) */}
+        <Route
+          path="/my-requests"
+          element={
+            <ProtectedRoute>
+              <MyVisitRequests />
             </ProtectedRoute>
           }
         />
