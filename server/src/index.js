@@ -9,6 +9,7 @@ import petPostsRoutes from "./routes/pet-posts.routes.js";
 import petPhotosRoutes from "./routes/pet-photos.routes.js";
 import visitRequestsRoutes from "./routes/visit-requests.routes.js";
 import usersRoutes from "./routes/users.routes.js";
+import favoritesRoutes from "./routes/favorites.routes.js";
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use("/auth", authRoutes);
 app.use("/posts", petPostsRoutes);
 app.use("/", petPhotosRoutes);
 app.use("/", visitRequestsRoutes);
+app.use("/", favoritesRoutes);
 app.use(usersRoutes);
 
 
