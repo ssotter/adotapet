@@ -8,6 +8,8 @@ import {
   getPostContact,
   requestVisit,
   setPostStatus,
+  favoritePost,      // ✅ ADICIONADO
+  unfavoritePost,    // ✅ ADICIONADO
 } from "../api/posts";
 import { useAuth } from "../store/auth";
 import { useToast } from "../components/Toast.jsx";
@@ -33,6 +35,43 @@ export default function PostDetail() {
   const [contactError, setContactError] = useState(null);
 
   const isOwner = !!(user && post?.owner_id && user.id === post.owner_id);
+
+  // ✅ FAVORITO (estado local igual ao PostCard)
+  const initialFav = useMemo(
+    () => Boolean(post?.is_favorited),
+    [post?.is_favorited],
+  );
+  const [isFav, setIsFav] = useState(initialFav);
+  const [savingFav, setSavingFav] = useState(false);
+
+  useEffect(() => {
+    setIsFav(Boolean(post?.is_favorited));
+  }, [post?.is_favorited]);
+
+  async function toggleFavorite() {
+    // igual comportamento do PostCard: só funciona logado
+    if (!user || savingFav || !post?.id) return;
+
+    const next = !isFav;
+    setIsFav(next); // otimista
+    // mantém o post coerente também (opcional, mas ajuda)
+    setPost((prev) => (prev ? { ...prev, is_favorited: next } : prev));
+    setSavingFav(true);
+
+    try {
+      if (next) {
+        await favoritePost(post.id);
+      } else {
+        await unfavoritePost(post.id);
+      }
+    } catch {
+      // rollback se falhar
+      setIsFav(!next);
+      setPost((prev) => (prev ? { ...prev, is_favorited: !next } : prev));
+    } finally {
+      setSavingFav(false);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -167,10 +206,32 @@ export default function PostDetail() {
   return (
     <Container>
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold">{post.name || "Sem nome"}</h1>
-          <div className="text-sm text-gray-600">
-            {post.neighborhood} • {typeLabel(post.type)}
+        <div className="flex items-start gap-3">
+          {/* ✅ ❤️ no topo (igual ao PostCard: só aparece logado) */}
+          {user ? (
+            <button
+              type="button"
+              onClick={toggleFavorite}
+              disabled={savingFav}
+              aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+              className={`mt-1 h-10 w-10 rounded-full grid place-items-center
+                backdrop-blur border transition
+                ${isFav ? "bg-red-50 border-red-200" : "bg-white/80 border-gray-200"}
+                ${savingFav ? "opacity-60" : "opacity-100 hover:scale-[1.02]"}
+              `}
+              title={isFav ? "Favoritado" : "Favoritar"}
+            >
+              <span className={`${isFav ? "text-red-600" : "text-gray-600"} text-lg leading-none`}>
+                {isFav ? "❤️" : "🤍"}
+              </span>
+            </button>
+          ) : null}
+
+          <div>
+            <h1 className="text-2xl font-semibold">{post.name || "Sem nome"}</h1>
+            <div className="text-sm text-gray-600">
+              {post.neighborhood} • {typeLabel(post.type)}
+            </div>
           </div>
         </div>
 
