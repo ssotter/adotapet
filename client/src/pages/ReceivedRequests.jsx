@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Container from "../components/Layout/Container";
 import { listReceivedRequests, updateVisitRequest } from "../api/visitRequests";
 import { Link } from "react-router-dom";
+import { useToast } from "../components/Toast.jsx";
 
 function statusLabel(status) {
   if (status === "PENDING") return "Pendente";
@@ -68,7 +69,6 @@ function getCreatedTime(r) {
 }
 
 function statusRank(status) {
-  // PENDING primeiro (mais importante), depois APPROVED, depois REJECTED
   if (status === "PENDING") return 0;
   if (status === "APPROVED") return 1;
   if (status === "REJECTED") return 2;
@@ -76,19 +76,24 @@ function statusRank(status) {
 }
 
 export default function ReceivedRequests() {
+  const toast = useToast();
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
-  async function load() {
+  async function load({ silent = false } = {}) {
     setLoading(true);
     setErr(null);
     try {
       const data = await listReceivedRequests();
-      setItems(data);
+      setItems(Array.isArray(data) ? data : []);
+      if (!silent) toast.success("Solicitações atualizadas.");
     } catch (e) {
-      setErr(e?.response?.data?.error || "Erro ao carregar solicitações");
+      const m = e?.response?.data?.error || "Erro ao carregar solicitações";
+      setErr(m);
+      if (!silent) toast.error(m);
     } finally {
       setLoading(false);
     }
@@ -101,15 +106,22 @@ export default function ReceivedRequests() {
       setItems((prev) =>
         prev.map((r) => (r.id === id ? { ...r, status } : r))
       );
+
+      toast.success(
+        status === "APPROVED"
+          ? "Solicitação aprovada. Contato liberado."
+          : "Solicitação rejeitada."
+      );
     } catch (e) {
-      alert(e?.response?.data?.error || "Erro ao atualizar solicitação");
+      toast.error(e?.response?.data?.error || "Erro ao atualizar solicitação");
     } finally {
       setActionLoadingId(null);
     }
   }
 
   useEffect(() => {
-    load();
+    load({ silent: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const sortedItems = useMemo(() => {
@@ -117,8 +129,6 @@ export default function ReceivedRequests() {
     return list.sort((a, b) => {
       const sr = statusRank(a.status) - statusRank(b.status);
       if (sr !== 0) return sr;
-
-      // mais recentes primeiro
       return getCreatedTime(b) - getCreatedTime(a);
     });
   }, [items]);
@@ -134,7 +144,7 @@ export default function ReceivedRequests() {
         </div>
 
         <button
-          onClick={load}
+          onClick={() => load()}
           className="px-3 py-2 rounded-lg text-sm border bg-white hover:bg-gray-50 disabled:opacity-60"
           disabled={loading}
         >

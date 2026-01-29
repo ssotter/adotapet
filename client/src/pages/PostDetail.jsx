@@ -10,78 +10,17 @@ import {
   setPostStatus,
 } from "../api/posts";
 import { useAuth } from "../store/auth";
+import { useToast } from "../components/Toast.jsx";
 
 function typeLabel(type) {
   return type === "FOUND_LOST" ? "Encontrado/Perdido" : "Adoção";
-}
-
-function PostDetailSkeleton() {
-  return (
-    <Container>
-      <div className="animate-pulse">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <div className="h-6 bg-gray-100 rounded w-56" />
-            <div className="h-4 bg-gray-100 rounded w-64 mt-2" />
-          </div>
-
-          <div className="flex gap-2 flex-wrap">
-            <div className="h-10 w-36 bg-gray-100 rounded-xl" />
-            <div className="h-10 w-28 bg-gray-100 rounded-xl" />
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-72 rounded-2xl bg-gray-100" />
-          <div className="rounded-2xl border bg-white p-4 space-y-4">
-            <div className="flex gap-2 flex-wrap">
-              <div className="h-6 w-28 bg-gray-100 rounded-full" />
-              <div className="h-6 w-20 bg-gray-100 rounded-full" />
-              <div className="h-6 w-16 bg-gray-100 rounded-full" />
-              <div className="h-6 w-16 bg-gray-100 rounded-full" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <div className="h-3 bg-gray-100 rounded w-16" />
-                <div className="h-4 bg-gray-100 rounded w-24 mt-2" />
-              </div>
-              <div>
-                <div className="h-3 bg-gray-100 rounded w-16" />
-                <div className="h-4 bg-gray-100 rounded w-24 mt-2" />
-              </div>
-              <div>
-                <div className="h-3 bg-gray-100 rounded w-16" />
-                <div className="h-4 bg-gray-100 rounded w-24 mt-2" />
-              </div>
-              <div>
-                <div className="h-3 bg-gray-100 rounded w-16" />
-                <div className="h-4 bg-gray-100 rounded w-24 mt-2" />
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <div className="h-3 bg-gray-100 rounded w-20" />
-              <div className="h-3 bg-gray-100 rounded w-full mt-2" />
-              <div className="h-3 bg-gray-100 rounded w-11/12 mt-2" />
-              <div className="h-3 bg-gray-100 rounded w-10/12 mt-2" />
-            </div>
-
-            <div className="pt-3 border-t">
-              <div className="h-4 bg-gray-100 rounded w-40" />
-              <div className="h-4 bg-gray-100 rounded w-72 mt-2" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </Container>
-  );
 }
 
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
 
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -113,9 +52,9 @@ export default function PostDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // ✅ NOVO: só abre modal se estiver logado
   function handleOpenRequestVisit() {
     if (!user) {
+      toast.info("Para solicitar uma visita, primeiro faça login.");
       navigate("/login");
       return;
     }
@@ -124,6 +63,7 @@ export default function PostDetail() {
 
   async function handleRequestVisit(message) {
     if (!user) {
+      toast.info("Faça login para solicitar visita.");
       navigate("/login");
       return;
     }
@@ -132,9 +72,9 @@ export default function PostDetail() {
     try {
       await requestVisit(id, message);
       setOpenModal(false);
-      alert("Pedido enviado! Aguarde aprovação do anunciante.");
+      toast.success("Pedido enviado! Aguarde aprovação do anunciante.");
     } catch (e) {
-      alert(e?.response?.data?.error || "Falha ao solicitar visita");
+      toast.error(e?.response?.data?.error || "Falha ao solicitar visita");
     } finally {
       setActionLoading(false);
     }
@@ -142,6 +82,7 @@ export default function PostDetail() {
 
   async function handleGetContact() {
     if (!user) {
+      toast.info("Faça login para ver o contato do anunciante.");
       navigate("/login");
       return;
     }
@@ -151,11 +92,12 @@ export default function PostDetail() {
     try {
       const data = await getPostContact(id);
       setContact(data);
+      toast.success("Contato liberado.");
     } catch (e) {
+      const msg = e?.response?.data?.error || "Não foi possível obter o contato";
       setContact(null);
-      setContactError(
-        e?.response?.data?.error || "Não foi possível obter o contato",
-      );
+      setContactError(msg);
+      toast.error(msg);
     } finally {
       setActionLoading(false);
     }
@@ -170,10 +112,10 @@ export default function PostDetail() {
     setActionLoading(true);
     try {
       await setPostStatus(post.id, "RESOLVED");
-      alert("Anúncio encerrado com sucesso.");
+      toast.success("Anúncio encerrado com sucesso.");
       load();
     } catch (e) {
-      alert(e?.response?.data?.error || "Erro ao encerrar anúncio");
+      toast.error(e?.response?.data?.error || "Erro ao encerrar anúncio");
     } finally {
       setActionLoading(false);
     }
@@ -186,14 +128,20 @@ export default function PostDetail() {
     if (!coverId || list.length === 0) return list;
 
     const idx = list.findIndex((p) => p.id === coverId);
-    if (idx <= 0) return list; // já é a primeira ou não achou
+    if (idx <= 0) return list;
 
     const [cover] = list.splice(idx, 1);
     return [cover, ...list];
   }, [post?.photos, post?.cover_photo_id]);
 
   if (loading) {
-    return <PostDetailSkeleton />;
+    return (
+      <Container>
+        <div className="p-4 rounded-2xl border bg-white text-sm text-gray-500">
+          Carregando anúncio...
+        </div>
+      </Container>
+    );
   }
 
   if (err) {
@@ -230,9 +178,7 @@ export default function PostDetail() {
           {!isOwner && (
             <button
               onClick={handleOpenRequestVisit}
-              title={
-                !user ? "Para solicitar uma visita, primeiro faça login." : ""
-              }
+              title={!user ? "Para solicitar uma visita, faça login." : ""}
               className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium"
             >
               Solicitar visita
@@ -242,11 +188,7 @@ export default function PostDetail() {
           {!isOwner && (
             <button
               onClick={handleGetContact}
-              title={
-                !user
-                  ? "Para ver o contato do anunciante, primeiro faça login."
-                  : ""
-              }
+              title={!user ? "Para ver o contato, faça login." : ""}
               className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium"
             >
               Ver contato
@@ -326,7 +268,7 @@ export default function PostDetail() {
               <div className="text-sm font-medium">Contato do anunciante</div>
 
               {contact ? (
-                <div className="mt-2 flex items-center justify-between gap-3">
+                <div className="mt-2 flex items-center justify-between gap-3 flex-wrap">
                   <div className="text-sm">
                     WhatsApp:{" "}
                     <span className="font-semibold">{contact.whatsapp}</span>

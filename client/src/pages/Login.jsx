@@ -1,27 +1,35 @@
 import { useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import { useAuth } from "../store/auth";
+import { useToast } from "../components/Toast.jsx";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const from = location.state?.from?.pathname || "/";
+  const toast = useToast();
 
   const [email, setEmail] = useState("sergio@adotapet.com");
   const [password, setPassword] = useState("123456");
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // ✅ se veio do ProtectedRoute, ele manda state={{from: location}}
+  const from = location.state?.from?.pathname || "/";
 
   async function onSubmit(e) {
     e.preventDefault();
-    setError(null);
+    setLoading(true);
+
     try {
       await login(email, password);
+      toast.success("Login realizado com sucesso!");
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err?.response?.data?.error || "Falha no login");
+      const m = err?.response?.data?.error || "Falha no login";
+      toast.error(String(m));
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -44,6 +52,10 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seu@email.com"
+              type="email"
+              autoComplete="email"
+              required
+              disabled={loading}
             />
           </div>
 
@@ -55,18 +67,30 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="******"
+              autoComplete="current-password"
+              required
+              disabled={loading}
             />
           </div>
 
-          {error && <div className="text-sm text-red-600">{String(error)}</div>}
-
-          <button className="w-full bg-black text-white rounded-xl py-2 font-medium">
-            Entrar
+          <button
+            disabled={loading}
+            className="w-full bg-black text-white rounded-xl py-2 font-medium disabled:opacity-60"
+          >
+            {loading ? "Entrando..." : "Entrar"}
           </button>
 
-          <div className="pt-2 text-sm">
-            <Link to="/forgot-password" className="text-gray-700 hover:underline">
-              Esqueci minha senha
+          <div className="text-sm text-gray-600 text-center">
+            Esqueceu a senha?{" "}
+            <Link to="/forgot-password" className="font-medium underline">
+              Recuperar
+            </Link>
+          </div>
+
+          <div className="text-sm text-gray-600 text-center">
+            Não tem conta?{" "}
+            <Link to="/register" className="font-medium underline">
+              Criar conta
             </Link>
           </div>
         </form>

@@ -1,54 +1,36 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import { forgotPassword } from "../api/auth";
+import { useToast } from "../components/Toast.jsx";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false); // ✅ evita reenvio e controla redirect
-  const [msg, setMsg] = useState("");
-  const [err, setErr] = useState("");
-
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
 
   async function onSubmit(e) {
     e.preventDefault();
+    const clean = email.trim();
 
-    const cleanEmail = email.trim();
-    if (!cleanEmail) {
-      setErr("Informe um e-mail válido.");
+    if (!clean) {
+      toast.error("Informe seu e-mail.");
       return;
     }
 
-    setErr("");
-    setMsg("");
     setLoading(true);
-
     try {
-      const data = await forgotPassword(cleanEmail);
+      const data = await forgotPassword(clean);
+      toast.success(data?.message || "Se o e-mail existir, enviaremos instruções.");
 
-      setMsg(
-        data?.message ||
-          "Se este e-mail estiver cadastrado, enviaremos instruções para redefinir sua senha."
-      );
-
-      setSent(true);
-
-      // ✅ mostra a mensagem e depois manda para Home
-      timerRef.current = setTimeout(() => {
+      // ✅ volta pra Home
+      setTimeout(() => {
         navigate("/", { replace: true });
-      }, 1200);
+      }, 800);
     } catch (e2) {
-      setErr(e2?.response?.data?.error || "Não foi possível enviar o e-mail.");
+      toast.error(e2?.response?.data?.error || "Não foi possível enviar o e-mail.");
     } finally {
       setLoading(false);
     }
@@ -76,28 +58,16 @@ export default function ForgotPassword() {
               type="email"
               autoComplete="email"
               required
-              disabled={loading || sent}
+              disabled={loading}
             />
           </div>
 
-          {msg && (
-            <div className="p-3 rounded-xl border bg-white text-sm text-gray-700">
-              {msg} <span className="text-gray-500">Redirecionando...</span>
-            </div>
-          )}
-
-          {err && (
-            <div className="p-3 rounded-xl border bg-white text-sm text-red-600">
-              {String(err)}
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={loading || sent}
+            disabled={loading}
             className="w-full px-4 py-2 rounded-xl bg-black text-white text-sm font-medium disabled:opacity-60"
           >
-            {loading ? "Enviando..." : sent ? "Enviado" : "Enviar link"}
+            {loading ? "Enviando..." : "Enviar link"}
           </button>
 
           <div className="text-sm text-gray-600 text-center">

@@ -1,0 +1,145 @@
+🔝 Próximos passos recomendados (priorizados)
+1️⃣ UX “estado vazio” + feedbacks (rápido e muito profissional)
+
+👉 Baixo esforço, alto impacto visual
+
+Onde aplicar:
+
+Home sem resultados de busca
+
+“Meus anúncios” sem anúncios
+
+“Solicitações” sem pedidos
+
+Lista de fotos vazia no anúncio
+
+O que mostrar:
+
+Ícone ilustrativo
+
+Texto humano (ex: “Nenhum pet encontrado com esses filtros”)
+
+CTA contextual (“Limpar filtros”, “Cadastrar pet”)
+
+💡 Valor pro TCC:
+
+UX, feedback ao usuário, heurísticas de Nielsen.
+
+2️⃣ Melhorar fluxo de Solicitações de Visita (core do sistema)
+
+👉 Isso é o coração do AdotaPet
+
+Sugestões:
+
+Badge de status mais semântico:
+
+⏳ Pendente
+
+✅ Aprovada
+
+❌ Rejeitada
+
+Após aprovação, liberar:
+
+WhatsApp automaticamente
+
+Mensagem clara: “Contato liberado”
+
+Bloquear nova solicitação se já existir uma pendente (frontend)
+
+💡 Valor pro TCC:
+
+Regras de negócio, controle de estado, fluxo assíncrono.
+
+3️⃣ Ordenação inteligente na Home
+
+👉 Parece simples, mas muda tudo
+
+Exemplos:
+
+Mais recentes primeiro (default)
+
+Filtro “Mais novos”
+
+Filtro “Mais antigos”
+
+Extra:
+
+Destacar anúncios recém-criados com badge “Novo”
+
+💡 Valor pro TCC:
+
+Usabilidade, priorização de conteúdo, performance percebida.
+
+4️⃣ Favoritar pets (feature que banca produto real)
+
+👉 Clássico, útil e valorizado
+
+Backend:
+
+Tabela favorites (user_id, post_id)
+
+Frontend:
+
+❤️ botão no card
+
+Página “Meus favoritos”
+
+💡 Valor pro TCC:
+
+Relacionamentos N:N, personalização, retenção de usuário.
+
+5️⃣ Controle regional mais explícito (Rio Grande)
+
+Agora que a marca está clara, pode reforçar:
+
+Texto fixo na Home:
+
+“Plataforma exclusiva para adoção em Rio Grande/RS”
+
+Validação futura: bairros apenas de Rio Grande
+
+Campo “cidade” já fixo no backend (não editável)
+
+💡 Valor pro TCC:
+
+Escopo de sistema, delimitação de domínio.
+
+6️⃣ Hardening técnico (opcional, mas bonito)
+
+Para fechar com chave de ouro:
+
+Expiração de token mais curta
+
+Refresh token (documentado, mesmo que simples)
+
+Rate limit em login / forgot password
+
+Logs mínimos de erro
+
+💡 Valor pro TCC:
+
+Segurança da informação, boas práticas backend.
+
+📌 Minha sugestão prática de sequência (sem quebrar ritmo)
+
+Se eu estivesse no teu lugar, faria assim:
+
+✅ Estados vazios + feedbacks
+
+✅ Refino do fluxo de solicitações
+
+✅ Ordenação / pequenos filtros
+
+⏳ Favoritos (se der tempo)
+
+📄 Documentação + README + prints
+
+📘 Próximo passo agora (objetivo e claro)
+
+Se quiser, já seguimos agora com um destes:
+
+👉 Opção A: implementar estado vazio (frontend puro)
+👉 Opção B: refinar Solicitações de Visita (UX + regras)
+👉 Opção C: Favoritar pets (feature nova completa)
+👉 Opção D: começar documentação do TCC / README final

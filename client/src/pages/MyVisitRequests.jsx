@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import { listMyVisitRequests } from "../api/visitRequests";
 import { getPostContact } from "../api/posts";
+import { useToast } from "../components/Toast.jsx";
 
 function statusBadge(status) {
   const base = "text-xs px-2 py-1 rounded-full font-medium";
@@ -14,35 +15,43 @@ function statusBadge(status) {
 }
 
 export default function MyVisitRequests() {
+  const toast = useToast();
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  // para "ver contato" sob demanda
   const [contactByPost, setContactByPost] = useState({});
   const [contactLoading, setContactLoading] = useState({});
   const [contactError, setContactError] = useState({});
 
-  async function load() {
+  async function load({ silent = false } = {}) {
     setLoading(true);
     setErr("");
     try {
       const data = await listMyVisitRequests();
       setItems(Array.isArray(data) ? data : []);
+      if (!silent) toast.success("Solicitações atualizadas.");
     } catch (e) {
-      setErr(e?.response?.data?.error || "Falha ao carregar suas solicitações.");
+      const m =
+        e?.response?.data?.error || "Falha ao carregar suas solicitações.";
+      setErr(m);
+      if (!silent) toast.error(m);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    load();
+    load({ silent: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleGetContact(postId) {
-    // evita refetch se já carregou
-    if (contactByPost[postId]) return;
+    if (contactByPost[postId]) {
+      toast.info("Contato já carregado.");
+      return;
+    }
 
     setContactLoading((p) => ({ ...p, [postId]: true }));
     setContactError((p) => ({ ...p, [postId]: "" }));
@@ -50,12 +59,12 @@ export default function MyVisitRequests() {
     try {
       const data = await getPostContact(postId);
       setContactByPost((p) => ({ ...p, [postId]: data }));
+      toast.success("Contato liberado.");
     } catch (e) {
-      setContactError((p) => ({
-        ...p,
-        [postId]:
-          e?.response?.data?.error || "Não foi possível obter o contato.",
-      }));
+      const m =
+        e?.response?.data?.error || "Não foi possível obter o contato.";
+      setContactError((p) => ({ ...p, [postId]: m }));
+      toast.error(m);
     } finally {
       setContactLoading((p) => ({ ...p, [postId]: false }));
     }
@@ -72,10 +81,11 @@ export default function MyVisitRequests() {
         </div>
 
         <button
-          onClick={load}
-          className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium"
+          onClick={() => load()}
+          className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium disabled:opacity-60"
+          disabled={loading}
         >
-          Atualizar
+          {loading ? "Atualizando..." : "Atualizar"}
         </button>
       </div>
 
@@ -95,8 +105,8 @@ export default function MyVisitRequests() {
         <div className="mt-6 space-y-3">
           {items.map((r) => {
             const b = statusBadge(r.status);
-            const postId = r.post_id || r.postId; // compat
-            const postName = r.post_name || r.postName; // se vier do backend
+            const postId = r.post_id || r.postId;
+            const postName = r.post_name || r.postName;
             const postType = r.post_type || r.postType;
 
             return (
@@ -146,7 +156,6 @@ export default function MyVisitRequests() {
                     </div>
                   ) : null}
 
-                  {/* Contato (somente aprovado) */}
                   {r.status === "APPROVED" && postId ? (
                     <div className="mt-3">
                       {contactByPost[postId] ? (
@@ -161,7 +170,7 @@ export default function MyVisitRequests() {
                           <a
                             className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium"
                             href={`https://wa.me/${String(
-                              contactByPost[postId].whatsapp,
+                              contactByPost[postId].whatsapp
                             ).replace(/\D/g, "")}`}
                             target="_blank"
                             rel="noreferrer"
@@ -192,7 +201,6 @@ export default function MyVisitRequests() {
                   ) : null}
                 </div>
 
-                {/* Ações */}
                 <div className="flex items-center gap-2">
                   {postId ? (
                     <Link

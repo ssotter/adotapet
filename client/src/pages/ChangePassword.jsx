@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import { changeMyPassword } from "../api/auth";
 import { useAuth } from "../store/auth";
+import { useToast } from "../components/Toast.jsx";
 
 export default function ChangePassword() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -22,17 +24,20 @@ export default function ChangePassword() {
     setMsg("");
 
     if (!user) {
+      toast.info("Faça login para alterar sua senha.");
       navigate("/login");
       return;
     }
 
     if (newPassword.length < 6) {
       setErr("A nova senha deve ter pelo menos 6 caracteres.");
+      toast.error("A nova senha deve ter pelo menos 6 caracteres.");
       return;
     }
 
     if (newPassword !== confirm) {
       setErr("As senhas não conferem.");
+      toast.error("As senhas não conferem.");
       return;
     }
 
@@ -40,17 +45,22 @@ export default function ChangePassword() {
     try {
       const data = await changeMyPassword(currentPassword, newPassword);
 
-      setMsg(data?.message || "Senha alterada com sucesso.");
+      const okMsg = data?.message || "Senha alterada com sucesso.";
+      setMsg(okMsg);
+
       setCurrentPassword("");
       setNewPassword("");
       setConfirm("");
 
-      // ✅ mantém logado e manda para Home
+      toast.success(okMsg);
+
       setTimeout(() => {
         navigate("/", { replace: true });
       }, 700);
     } catch (e2) {
-      setErr(e2?.response?.data?.error || "Não foi possível alterar a senha.");
+      const m = e2?.response?.data?.error || "Não foi possível alterar a senha.";
+      setErr(m);
+      toast.error(m);
     } finally {
       setLoading(false);
     }

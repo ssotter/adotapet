@@ -1,31 +1,39 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import { useAuth } from "../store/auth";
+import { useToast } from "../components/Toast.jsx";
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    whatsapp: "",
-  });
-  const [error, setError] = useState(null);
+  const toast = useToast();
 
-  function setField(key, value) {
-    setForm((f) => ({ ...f, [key]: value }));
-  }
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
 
   async function onSubmit(e) {
     e.preventDefault();
-    setError(null);
+
+    if (password.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      await register(form);
-      navigate("/");
+      await register({ name, email, whatsapp, password });
+      toast.success("Conta criada com sucesso!");
+      navigate("/", { replace: true });
     } catch (err) {
-      setError(err?.response?.data?.error || "Falha no cadastro");
+      const m = err?.response?.data?.error || "Falha ao criar conta";
+      toast.error(String(m));
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -33,15 +41,22 @@ export default function Register() {
     <Container>
       <div className="max-w-md">
         <h1 className="text-2xl font-semibold">Criar conta</h1>
-        <p className="text-gray-600 text-sm">Faça seu cadastro para anunciar e solicitar visitas.</p>
+        <p className="text-gray-600 text-sm">
+          Cadastre-se para solicitar visitas e ver contato.
+        </p>
 
-        <form onSubmit={onSubmit} className="mt-6 p-4 rounded-2xl border bg-white space-y-3">
+        <form
+          onSubmit={onSubmit}
+          className="mt-6 p-4 rounded-2xl border bg-white space-y-3"
+        >
           <div>
             <label className="text-sm font-medium">Nome</label>
             <input
               className="mt-1 w-full border rounded-xl px-3 py-2"
-              value={form.name}
-              onChange={(e) => setField("name", e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              disabled={loading}
             />
           </div>
 
@@ -49,18 +64,12 @@ export default function Register() {
             <label className="text-sm font-medium">Email</label>
             <input
               className="mt-1 w-full border rounded-xl px-3 py-2"
-              value={form.email}
-              onChange={(e) => setField("email", e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Senha</label>
-            <input
-              className="mt-1 w-full border rounded-xl px-3 py-2"
-              type="password"
-              value={form.password}
-              onChange={(e) => setField("password", e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              autoComplete="email"
+              required
+              disabled={loading}
             />
           </div>
 
@@ -68,17 +77,39 @@ export default function Register() {
             <label className="text-sm font-medium">WhatsApp</label>
             <input
               className="mt-1 w-full border rounded-xl px-3 py-2"
-              value={form.whatsapp}
-              onChange={(e) => setField("whatsapp", e.target.value)}
-              placeholder="55999999999"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              required
+              disabled={loading}
             />
           </div>
 
-          {error && <div className="text-sm text-red-600">{String(error)}</div>}
+          <div>
+            <label className="text-sm font-medium">Senha</label>
+            <input
+              className="mt-1 w-full border rounded-xl px-3 py-2"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              autoComplete="new-password"
+              required
+              disabled={loading}
+            />
+          </div>
 
-          <button className="w-full bg-black text-white rounded-xl py-2 font-medium">
-            Criar conta
+          <button
+            disabled={loading}
+            className="w-full bg-black text-white rounded-xl py-2 font-medium disabled:opacity-60"
+          >
+            {loading ? "Criando..." : "Criar conta"}
           </button>
+
+          <div className="text-sm text-gray-600 text-center">
+            Já tem conta?{" "}
+            <Link to="/login" className="font-medium underline">
+              Entrar
+            </Link>
+          </div>
         </form>
       </div>
     </Container>
