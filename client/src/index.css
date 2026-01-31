@@ -12,3 +12,9 @@ body {
   background: #f9fafb; /* cinza bem claro */
   color: #111827;      /* texto cinza escuro */
 }
+
+/* ✅ Bottom Sheet animation (mobile) */
+@keyframes slideUp {
+  from { transform: translateY(12px); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
+}

@@ -34,3 +34,5 @@ server/api-env.json
 server/allow-secret.json
 server/backup_adotapet.dump
 *.dump
+server/taskdef.new.json
+server/td_raw.json

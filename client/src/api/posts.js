@@ -4,8 +4,11 @@ export async function listPosts(filters = {}) {
   const params = {};
 
   // só envia se existir
-  if (filters.type) params.type = filters.type;
-  if (filters.neighborhoodId) params.neighborhoodId = filters.neighborhoodId;
+if (filters.type) params.type = filters.type;
+if (filters.species) params.species = filters.species;
+if (filters.size) params.size = filters.size;
+if (filters.neighborhoodId) params.neighborhoodId = filters.neighborhoodId;
+
   if (filters.color) params.color = filters.color;
 
   if (
