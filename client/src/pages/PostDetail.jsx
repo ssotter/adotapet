@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import PhotoCarousel from "../components/Posts/PhotoCarousel";
 import RequestVisitModal from "../components/Posts/RequestVisitModal";
@@ -8,8 +8,8 @@ import {
   getPostContact,
   requestVisit,
   setPostStatus,
-  favoritePost,      // ✅ ADICIONADO
-  unfavoritePost,    // ✅ ADICIONADO
+  favoritePost,
+  unfavoritePost,
 } from "../api/posts";
 import { useAuth } from "../store/auth";
 import { useToast } from "../components/Toast.jsx";
@@ -18,9 +18,35 @@ function typeLabel(type) {
   return type === "FOUND_LOST" ? "Encontrado/Perdido" : "Adoção";
 }
 
+function speciesLabel(v) {
+  if (v === "DOG") return "Cachorro";
+  if (v === "CAT") return "Gato";
+  return v || "—";
+}
+
+function sexLabel(v) {
+  if (v === "M") return "Macho";
+  if (v === "F") return "Fêmea";
+  return v || "—";
+}
+
+function sizeLabel(v) {
+  if (v === "SMALL") return "Pequeno";
+  if (v === "MEDIUM") return "Médio";
+  if (v === "LARGE") return "Grande";
+  return v || "—";
+}
+
+function statusLabel(status) {
+  if (status === "ACTIVE") return "Ativo";
+  if (status === "RESOLVED") return "Encerrado";
+  return status || "—";
+}
+
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const toast = useToast();
 
@@ -37,10 +63,7 @@ export default function PostDetail() {
   const isOwner = !!(user && post?.owner_id && user.id === post.owner_id);
 
   // ✅ FAVORITO (estado local igual ao PostCard)
-  const initialFav = useMemo(
-    () => Boolean(post?.is_favorited),
-    [post?.is_favorited],
-  );
+  const initialFav = useMemo(() => Boolean(post?.is_favorited), [post?.is_favorited]);
   const [isFav, setIsFav] = useState(initialFav);
   const [savingFav, setSavingFav] = useState(false);
 
@@ -49,27 +72,36 @@ export default function PostDetail() {
   }, [post?.is_favorited]);
 
   async function toggleFavorite() {
-    // igual comportamento do PostCard: só funciona logado
     if (!user || savingFav || !post?.id) return;
 
     const next = !isFav;
     setIsFav(next); // otimista
-    // mantém o post coerente também (opcional, mas ajuda)
     setPost((prev) => (prev ? { ...prev, is_favorited: next } : prev));
     setSavingFav(true);
 
     try {
-      if (next) {
-        await favoritePost(post.id);
-      } else {
-        await unfavoritePost(post.id);
-      }
+      if (next) await favoritePost(post.id);
+      else await unfavoritePost(post.id);
     } catch {
-      // rollback se falhar
       setIsFav(!next);
       setPost((prev) => (prev ? { ...prev, is_favorited: !next } : prev));
     } finally {
       setSavingFav(false);
+    }
+  }
+
+  function handleBack() {
+    const from = location.state?.from;
+
+    if (typeof from === "string" && from.trim()) {
+      navigate(from);
+      return;
+    }
+
+    try {
+      navigate(-1);
+    } catch {
+      navigate("/");
     }
   }
 
@@ -143,9 +175,7 @@ export default function PostDetail() {
   }
 
   async function handleResolvePost() {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja encerrar este anúncio?",
-    );
+    const confirmed = window.confirm("Tem certeza que deseja encerrar este anúncio?");
     if (!confirmed) return;
 
     setActionLoading(true);
@@ -235,7 +265,16 @@ export default function PostDetail() {
           </div>
         </div>
 
+        {/* ✅ Botões juntos (inclui Voltar) */}
         <div className="flex gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm font-medium"
+          >
+            ← Voltar
+          </button>
+
           {!isOwner && (
             <button
               onClick={handleOpenRequestVisit}
@@ -288,13 +327,13 @@ export default function PostDetail() {
               {typeLabel(post.type)}
             </span>
             <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
-              {post.species}
+              {speciesLabel(post.species)}
             </span>
             <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
-              {post.sex}
+              {sexLabel(post.sex)}
             </span>
             <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
-              {post.size}
+              {sizeLabel(post.size)}
             </span>
           </div>
 
@@ -311,9 +350,18 @@ export default function PostDetail() {
               <div className="text-gray-500">Peso</div>
               <div className="font-medium">{post.weight_kg ?? "-"} kg</div>
             </div>
+
             <div>
               <div className="text-gray-500">Status</div>
-              <div className="font-medium">{post.status}</div>
+              <span
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  post.status === "ACTIVE"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                {statusLabel(post.status)}
+              </span>
             </div>
           </div>
 
@@ -331,16 +379,12 @@ export default function PostDetail() {
               {contact ? (
                 <div className="mt-2 flex items-center justify-between gap-3 flex-wrap">
                   <div className="text-sm">
-                    WhatsApp:{" "}
-                    <span className="font-semibold">{contact.whatsapp}</span>
+                    WhatsApp: <span className="font-semibold">{contact.whatsapp}</span>
                   </div>
 
                   <a
                     className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium"
-                    href={`https://wa.me/${String(contact.whatsapp).replace(
-                      /\D/g,
-                      "",
-                    )}`}
+                    href={`https://wa.me/${String(contact.whatsapp).replace(/\D/g, "")}`}
                     target="_blank"
                     rel="noreferrer"
                   >

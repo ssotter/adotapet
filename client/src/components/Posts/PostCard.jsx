@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../store/auth";
 import { favoritePost, unfavoritePost } from "../../api/posts";
 
@@ -11,8 +11,15 @@ function statusLabel(status) {
   return status === "ACTIVE" ? "Ativo" : "Encerrado";
 }
 
+function speciesLabel(v) {
+  if (v === "DOG") return "Cachorro";
+  if (v === "CAT") return "Gato";
+  return v || "—";
+}
+
 export default function PostCard({ post, onUnfavorite }) {
   const { user } = useAuth();
+  const location = useLocation();
 
   const cover = post.cover_url;
   const title =
@@ -52,9 +59,12 @@ export default function PostCard({ post, onUnfavorite }) {
     }
   }
 
+  const from = `${location.pathname}${location.search}`;
+
   return (
     <Link
       to={`/posts/${post.id}`}
+      state={{ from }}
       className="group rounded-2xl border bg-white overflow-hidden hover:shadow-sm transition relative"
     >
       {/* ❤️ (só aparece logado) */}
@@ -79,11 +89,7 @@ export default function PostCard({ post, onUnfavorite }) {
 
       <div className="h-44 bg-gray-100 flex items-center justify-center overflow-hidden">
         {cover ? (
-          <img
-            src={cover}
-            alt={title}
-            className="max-h-full max-w-full object-contain"
-          />
+          <img src={cover} alt={title} className="max-h-full max-w-full object-contain" />
         ) : (
           <div className="w-full h-full grid place-items-center text-gray-400 text-sm">
             Sem foto
@@ -134,7 +140,7 @@ export default function PostCard({ post, onUnfavorite }) {
             Cor: <span className="font-medium">{post.color}</span>
           </div>
           <div>
-            Espécie: <span className="font-medium">{post.species}</span>
+            Espécie: <span className="font-medium">{speciesLabel(post.species)}</span>
           </div>
         </div>
       </div>
