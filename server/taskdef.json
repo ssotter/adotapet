@@ -1,0 +1,114 @@
+{
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:040235854158:task-definition/adotapet-api:2",
+    "containerDefinitions": [
+        {
+            "name": "api",
+            "image": "040235854158.dkr.ecr.us-east-1.amazonaws.com/adotapet-api:latest",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "containerPort": 3001,
+                    "hostPort": 3001,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "PORT",
+                    "value": "3001"
+                },
+                {
+                    "name": "NODE_ENV",
+                    "value": "production"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "secrets": [
+                {
+                    "name": "DATABASE_URL",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:040235854158:secret:adotapet/api-env-oVrY1R:DATABASE_URL::"
+                },
+                {
+                    "name": "JWT_SECRET",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:040235854158:secret:adotapet/api-env-oVrY1R:JWT_SECRET::"
+                },
+                {
+                    "name": "JWT_EXPIRES_IN",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:040235854158:secret:adotapet/api-env-oVrY1R:JWT_EXPIRES_IN::"
+                },
+                {
+                    "name": "CLOUDINARY_CLOUD_NAME",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:040235854158:secret:adotapet/api-env-oVrY1R:CLOUDINARY_CLOUD_NAME::"
+                },
+                {
+                    "name": "CLOUDINARY_API_KEY",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:040235854158:secret:adotapet/api-env-oVrY1R:CLOUDINARY_API_KEY::"
+                },
+                {
+                    "name": "CLOUDINARY_API_SECRET",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:040235854158:secret:adotapet/api-env-oVrY1R:CLOUDINARY_API_SECRET::"
+                },
+                {
+                    "name": "FRONTEND_URL",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:040235854158:secret:adotapet/api-env-oVrY1R:FRONTEND_URL::"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/adotapet-api",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            },
+            "systemControls": []
+        }
+    ],
+    "family": "adotapet-api",
+    "executionRoleArn": "arn:aws:iam::040235854158:role/adotapet-ecs-task-exec-role",
+    "networkMode": "awsvpc",
+    "revision": 2,
+    "volumes": [],
+    "status": "ACTIVE",
+    "requiresAttributes": [
+        {
+            "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+        },
+        {
+            "name": "ecs.capability.execution-role-awslogs"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.ecr-auth"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+        },
+        {
+            "name": "ecs.capability.secrets.asm.environment-variables"
+        },
+        {
+            "name": "ecs.capability.execution-role-ecr-pull"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+        },
+        {
+            "name": "ecs.capability.task-eni"
+        }
+    ],
+    "placementConstraints": [],
+    "compatibilities": [
+        "EC2",
+        "MANAGED_INSTANCES",
+        "FARGATE"
+    ],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "256",
+    "memory": "512",
+    "registeredAt": "2026-01-30T12:02:07.396000-03:00",
+    "registeredBy": "arn:aws:iam::040235854158:user/adotapet-cli"
+}
