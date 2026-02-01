@@ -3,7 +3,7 @@ import Navbar from "./components/Layout/Navbar.jsx";
 import Home from "./pages/Home.jsx";
 import PostDetail from "./pages/PostDetail.jsx";
 import ReceivedRequests from "./pages/ReceivedRequests.jsx";
-import MyVisitRequests from "./pages/MyVisitRequests.jsx"; // ✅ NOVO
+import MyVisitRequests from "./pages/MyVisitRequests.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -15,6 +15,7 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import ChangePassword from "./pages/ChangePassword.jsx";
 import Favorites from "./pages/Favorites.jsx";
+import Sobre from "./pages/Sobre.jsx"; // ✅ NOVO
 
 export default function App() {
   return (
@@ -23,6 +24,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/posts/:id" element={<PostDetail />} />
+
+        {/* ✅ página sobre (pública) */}
+        <Route path="/sobre" element={<Sobre />} />
 
         {/* ✅ solicitações recebidas (dono do pet) */}
         <Route

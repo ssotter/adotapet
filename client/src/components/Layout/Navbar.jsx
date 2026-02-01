@@ -76,17 +76,13 @@ function CloseIcon() {
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
   const [open, setOpen] = useState(false);
 
-  // trava scroll do body quando o menu abre
   useEffect(() => {
-    if (open) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
+    document.body.style.overflow = open ? "hidden" : "";
     return () => (document.body.style.overflow = "");
   }, [open]);
 
-  // fecha com ESC
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
@@ -144,6 +140,9 @@ export default function Navbar() {
               <NavItem to="/register">Criar conta</NavItem>
             </>
           )}
+
+          {/* ✅ Sobre por último */}
+          <NavItem to="/sobre">Sobre</NavItem>
         </div>
 
         {/* Mobile hamburger */}
@@ -159,14 +158,12 @@ export default function Navbar() {
       {/* Mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
-          {/* overlay */}
           <button
             className="absolute inset-0 bg-black/30"
             onClick={() => setOpen(false)}
             aria-label="Fechar menu"
           />
 
-          {/* painel */}
           <div className="absolute right-0 top-0 h-full w-[85%] max-w-sm bg-[#FFF7F2] border-l border-[#F1E4DB] shadow-xl p-4 flex flex-col">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-[#6B3F2B]">Menu</span>
@@ -212,6 +209,11 @@ export default function Navbar() {
                   </NavItem>
                 </>
               )}
+
+              {/* ✅ Sobre por último no mobile */}
+              <NavItem to="/sobre" onClick={() => setOpen(false)}>
+                Sobre
+              </NavItem>
             </div>
 
             <div className="mt-auto pt-4 border-t border-[#F1E4DB]">
