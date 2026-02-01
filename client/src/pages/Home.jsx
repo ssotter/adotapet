@@ -348,7 +348,7 @@ export default function Home() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-gray-600 text-sm max-w-xl">
-            Plataforma digital para adoção responsável de pets.
+            Plataforma digital para adoção responsável de pets em Rio Grande/RS.
           </p>
         </div>
 
@@ -441,7 +441,7 @@ export default function Home() {
         />
       </FilterSheet>
 
-      <div className="mt-6 pb-28 sm:pb-0">
+      <div className="mt-6 pb-14 sm:pb-0">
         {error && (
           <div className="p-4 rounded-2xl border bg-white text-sm text-red-600">
             {String(error)}

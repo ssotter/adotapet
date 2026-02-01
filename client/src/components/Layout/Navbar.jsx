@@ -104,7 +104,7 @@ export default function Navbar() {
     <div className="border-b bg-[#FFF7F2] border-[#F1E4DB] sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <Logo subtitle="Rio Grande/RS" />
+          <Logo />
         </Link>
 
         {/* Desktop nav */}
