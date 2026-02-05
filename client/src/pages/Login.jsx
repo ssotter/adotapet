@@ -10,8 +10,8 @@ export default function Login() {
   const location = useLocation();
   const toast = useToast();
 
-  const [email, setEmail] = useState("sergio@adotapet.com");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState();
+  const [password, setPassword] = useState();
   const [loading, setLoading] = useState(false);
 
   // ✅ se veio do ProtectedRoute, ele manda state={{from: location}}
