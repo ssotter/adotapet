@@ -86,6 +86,48 @@ O frontend estará disponível em: http://localhost:5173
 
 ------------------------------------------------------------------------
 
+## 🧪 Testes Automatizados
+
+O projeto agora conta com suítes unitárias para front-end e back-end,
+garantindo que os fluxos críticos continuem funcionando conforme o
+esperado.
+
+### Frontend (React + Vitest)
+
+- `ProtectedRoute`, `Logo` e as páginas de **Login** e **Register**
+  possuem testes cobrindo estados de carregamento, feedback visual,
+  redirecionamentos e tratamento de erros vindos da API.
+- Os formulários utilizam `useId` para manter acessibilidade e evitar
+  divergência entre labels e inputs durante as simulações.
+- Como executar:
+
+```
+cd client
+npm run test
+```
+
+### Backend (Node + Vitest)
+
+- Utilitários (`jwt`, `http`, `validate`) e os validators de anúncios
+  possuem cobertura completa.
+- O controlador de autenticação (`register`, `login`, `forgotPassword`)
+  é testado com doubles para banco, bcrypt, envio de e-mail e geração de
+  JWT.
+- Alguns exemplos verificados: conflito de e-mail, hash/compare de
+  senha, geração de token de recuperação e resposta neutra para e-mails
+  inexistentes.
+- Como executar:
+
+```
+cd server
+npm run test
+```
+
+Os testes rodam em ambiente Node/JS DOM e podem ser integrados facilmente
+à pipeline de CI para evitar regressões.
+
+------------------------------------------------------------------------
+
 ## 🔐 Autenticação
 
 O sistema utiliza autenticação via JWT.

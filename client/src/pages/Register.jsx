@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import { useAuth } from "../store/auth";
@@ -15,6 +15,10 @@ export default function Register() {
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const nameId = useId();
+  const emailId = useId();
+  const whatsappId = useId();
+  const passwordId = useId();
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -50,8 +54,11 @@ export default function Register() {
           className="mt-6 p-4 rounded-2xl border bg-white space-y-3"
         >
           <div>
-            <label className="text-sm font-medium">Nome</label>
+            <label className="text-sm font-medium" htmlFor={nameId}>
+              Nome
+            </label>
             <input
+              id={nameId}
               className="mt-1 w-full border rounded-xl px-3 py-2"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -61,8 +68,11 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium" htmlFor={emailId}>
+              Email
+            </label>
             <input
+              id={emailId}
               className="mt-1 w-full border rounded-xl px-3 py-2"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -74,8 +84,11 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">WhatsApp</label>
+            <label className="text-sm font-medium" htmlFor={whatsappId}>
+              WhatsApp
+            </label>
             <input
+              id={whatsappId}
               className="mt-1 w-full border rounded-xl px-3 py-2"
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
@@ -85,8 +98,11 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Senha</label>
+            <label className="text-sm font-medium" htmlFor={passwordId}>
+              Senha
+            </label>
             <input
+              id={passwordId}
               className="mt-1 w-full border rounded-xl px-3 py-2"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

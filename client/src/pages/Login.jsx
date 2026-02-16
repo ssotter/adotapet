@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Container from "../components/Layout/Container";
 import { useAuth } from "../store/auth";
@@ -10,9 +10,11 @@ export default function Login() {
   const location = useLocation();
   const toast = useToast();
 
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const emailId = useId();
+  const passwordId = useId();
 
   // ✅ se veio do ProtectedRoute, ele manda state={{from: location}}
   const from = location.state?.from?.pathname || "/";
@@ -46,8 +48,11 @@ export default function Login() {
           className="mt-6 p-4 rounded-2xl border bg-white space-y-3"
         >
           <div>
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium" htmlFor={emailId}>
+              Email
+            </label>
             <input
+              id={emailId}
               className="mt-1 w-full border rounded-xl px-3 py-2"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -60,8 +65,11 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Senha</label>
+            <label className="text-sm font-medium" htmlFor={passwordId}>
+              Senha
+            </label>
             <input
+              id={passwordId}
               className="mt-1 w-full border rounded-xl px-3 py-2"
               type="password"
               value={password}

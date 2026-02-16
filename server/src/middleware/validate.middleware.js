@@ -4,7 +4,8 @@ export function validate(schema) {
       schema.parse(req.body);
       return next();
     } catch (err) {
-      return res.status(400).json({ error: err.errors });
+      const issues = err.errors ?? err.issues ?? [{ message: err.message }];
+      return res.status(400).json({ error: issues });
     }
   };
 }
