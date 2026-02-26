@@ -1,237 +1,133 @@
 # AdotaPet 🐾
 
-Sistema web para cadastro de pets para adoção e animais
-encontrados/perdidos, desenvolvido como Trabalho de Conclusão de Curso
-(TCC) da Pós-Graduação em Desenvolvimento Full Stack.
+O **AdotaPet** é uma plataforma web para adoção de pets desenvolvida como Trabalho de Conclusão de Curso da Pós-Graduação em Desenvolvimento Full Stack. A iniciativa nasceu após as enchentes de maio de 2024 no Rio Grande do Sul, com o objetivo de reconectar famílias e animais perdidos, além de ampliar a divulgação de pets disponíveis para adoção em Rio Grande/RS.
 
-O projeto tem como objetivo facilitar a divulgação de animais para
-adoção e ajudar na localização de tutores de animais perdidos ou
-encontrados na cidade de Rio Grande/RS.
+---
 
-------------------------------------------------------------------------
+## 📌 Descrição do Projeto
 
-## 🎯 Objetivo
+- Centraliza cadastros de animais para adoção e registros de pets perdidos/encontrados.
+- Facilita o contato seguro entre tutores e adotantes por meio de solicitações de visita intermediadas pela plataforma.
+- Combina uma UI mobile-first com recursos de autenticação, moderação e notificações por e-mail.
 
-Criar uma plataforma web que permita:
+---
 
--   Cadastro de usuários
--   Publicação de anúncios de pets para adoção
--   Publicação de anúncios de animais encontrados/perdidos
--   Busca com filtros (cor, idade, peso e bairro)
--   Solicitação de visita e contato entre usuários autenticados
+## 🏗️ Arquitetura
 
-------------------------------------------------------------------------
+| Camada         | Tecnologia |
+| -------------- | ---------- |
+| Frontend       | React + Vite + React Router + Tailwind CSS |
+| Backend        | Node.js + Express |
+| Banco de Dados | PostgreSQL |
+| Autenticação   | JWT |
+| Upload         | Cloudinary |
+| Infraestrutura | AWS (conteinerização com Docker, definições ECS/Fargate e integração via task definitions) |
 
-## 🛠 Tecnologias Utilizadas
+---
 
-### Frontend
+## ⚙️ Funcionalidades Principais
 
--   React (Vite)
--   Axios
--   React Router
+- Cadastro de usuários, login e recuperação de senha.
+- CRUD completo de anúncios (adoção ou perdido/encontrado) com múltiplas fotos e definição de capa.
+- Upload de imagens com envio direto ao Cloudinary.
+- Filtros por espécie e bairro, além de ordenação e destaques visuais.
+- Proteção do número de WhatsApp, liberado somente após aprovação de solicitações de visita.
+- Alteração de senha diretamente pelo perfil autenticado.
+- Layout responsivo com foco mobile-first e feedbacks em tempo real.
 
-### Backend
+---
 
--   Node.js
--   Express
--   PostgreSQL
--   JWT (autenticação)
--   Cloudinary (upload de imagens)
+## 🔐 Segurança
 
-### Infra
+- Autenticação JWT com middleware de proteção de rotas e renovação controlada.
+- Senhas persistidas com bcrypt.
+- Validação de dados em middleware e validators específicos (ex.: `pet-posts.validators.js`, `visit-requests.validators.js`).
+- Separação de variáveis sensíveis em arquivos `.env` e manifestos específicos (`api-env.json`, `secret-api-env.json`).
 
--   GitHub (versionamento)
--   Banco de dados PostgreSQL
--   API REST
+---
 
-------------------------------------------------------------------------
+## 🚀 Como rodar o projeto localmente
 
-## 📂 Estrutura do Projeto
+### 1. Pré-requisitos
 
-adotapet/ 
-  client/ \# Frontend React 
-  server/ \# Backend Node + Express
-    src/ 
-    controllers/ 
-    routes/ 
-    middleware/ 
-    db/ 
-    utils/
+- Node.js 18+
+- PostgreSQL 14+
+- Conta Cloudinary (para testes de upload)
+- Git
 
-------------------------------------------------------------------------
+### 2. Backend (`server/`)
 
-## 🚀 Como executar o projeto localmente
+1. `cd server`
+2. `npm install`
+3. Configure `.env` seguindo o modelo (`DATABASE_URL`, `JWT_SECRET`, `CLOUDINARY_*`, `APP_URL`, etc.).
+4. `npm run dev` → API em http://localhost:3001.
 
-### Pré-requisitos
+Scripts relevantes no [server/package.json](server/package.json):
+- `npm run dev`: nodemon + ts-node para desenvolvimento.
+- `npm run test`: Vitest cobrindo controllers, middlewares e utils.
 
--   Node.js 18+
--   PostgreSQL 18+
--   Git
+### 3. Banco de Dados
 
-------------------------------------------------------------------------
+- Utilize `docker compose up db` conforme [server/docker-compose.yml](server/docker-compose.yml) ou configure um PostgreSQL local.
+- Para dados iniciais, importe `backup_adotapet.dump` ou rode scripts em [server/src/db](server/src/db).
+- Seeds auxiliares: `seed_neighborhoods.sql`.
 
-### 2️⃣ Backend
+### 4. Frontend (`client/`)
 
-cd server npm install npm run dev
+1. `cd client`
+2. `npm install`
+3. Copie `.env.example` (ou `env.development`) para `.env.local` configurando `VITE_API_URL`, `VITE_CLOUDINARY_*`, etc.
+4. `npm run dev` → aplicativo em http://localhost:5173.
 
-A API estará disponível em: http://localhost:3001
+Scripts em [client/package.json](client/package.json):
+- `npm run dev`: Vite em modo HMR.
+- `npm run build`: bundle de produção.
+- `npm run test`: Vitest + Testing Library para componentes e páginas.
 
-------------------------------------------------------------------------
+---
 
-### 3️⃣ Frontend
+## ☁️ Deploy
 
-cd client npm install npm run dev
+- O backend é empacotado via `Dockerfile` e possui definições ECS em `taskdef*.json`, com políticas de confiança (`ecs-trust.json`, `task-role-trust.json`).
+- Variáveis de ambiente são injetadas por `api-env.json` e `secret-api-env.json` antes do registro do task definition.
+- A execução acontece em AWS ECS/Fargate (ou semelhante), com logs e permissões definidos por IAM.
+- O frontend pode ser publicado em S3 + CloudFront ou integrado ao mesmo pipeline após `npm run build`.
 
-O frontend estará disponível em: http://localhost:5173
+---
 
-------------------------------------------------------------------------
-
-## 🧪 Testes Automatizados
-
-O projeto agora conta com suítes unitárias para front-end e back-end,
-garantindo que os fluxos críticos continuem funcionando conforme o
-esperado.
-
-### Frontend (React + Vitest)
-
-- `ProtectedRoute`, `Logo` e as páginas de **Login** e **Register**
-  possuem testes cobrindo estados de carregamento, feedback visual,
-  redirecionamentos e tratamento de erros vindos da API.
-- Os formulários utilizam `useId` para manter acessibilidade e evitar
-  divergência entre labels e inputs durante as simulações.
-- Como executar:
+## 📁 Estrutura de Pastas
 
 ```
-cd client
-npm run test
+adotapet/
+├── client/        # Aplicação React (Vite, Tailwind, Vitest)
+│   └── src/
+│       ├── api/      # Clientes HTTP e adapters (auth, posts, neighborhoods, etc.)
+│       ├── components/ # UI compartilhada (Brand, Layout, Posts, ProtectedRoute, Toast)
+│       ├── pages/      # Telas (Login, Register, Home, Perfil, Solicitações, etc.)
+│       └── store/      # Zustand stores (auth)
+├── server/        # API Node/Express
+│   └── src/
+│       ├── controllers/  # Casos de uso: auth, favorites, pet-posts, visit-requests
+│       ├── middleware/   # Auth, upload via multer/cloudinary, validação
+│       ├── routes/       # Endpoints REST agrupados
+│       ├── validators/   # Schemas Joi/Yup para entrada
+│       ├── utils/        # JWT, HTTP helpers, envio de e-mail
+│       └── db/           # Conexão PostgreSQL, schema SQL e seeds
+├── NextSteps/     # Planos e anotações futuras
+└── README.md / ...
 ```
 
-### Backend (Node + Vitest)
+---
 
-- Utilitários (`jwt`, `http`, `validate`) e os validators de anúncios
-  possuem cobertura completa.
-- O controlador de autenticação (`register`, `login`, `forgotPassword`)
-  é testado com doubles para banco, bcrypt, envio de e-mail e geração de
-  JWT.
-- Alguns exemplos verificados: conflito de e-mail, hash/compare de
-  senha, geração de token de recuperação e resposta neutra para e-mails
-  inexistentes.
-- Como executar:
+## 🧪 Testes
 
-```
-cd server
-npm run test
-```
+- **Frontend:** Vitest + @testing-library/react cobrindo `ProtectedRoute`, `Logo`, `Login`, `Register` e fluxos principais. Execute `npm run test` dentro de `client/`.
+- **Backend:** Vitest valida utilitários (`jwt`, `http`), validators e `auth.controller`. Execute `npm run test` dentro de `server/`.
 
-Os testes rodam em ambiente Node/JS DOM e podem ser integrados facilmente
-à pipeline de CI para evitar regressões.
+---
 
-------------------------------------------------------------------------
+## 🤝 Contribuição
 
-## 🔐 Autenticação
-
-O sistema utiliza autenticação via JWT.
-
-Endpoints principais: - POST /auth/register - POST /auth/login - GET /me
-
-------------------------------------------------------------------------
-
-## 🔐 Funcionalidades de Autenticação
-
-### ✅ Cadastro e Login
-- Registro de usuários com senha criptografada (bcrypt)
-- Login com geração de token JWT
-- Persistência de sessão via `localStorage`
-
-### ✅ Proteção de Rotas
-- Rotas sensíveis protegidas via `ProtectedRoute`
-- Redirecionamento automático para `/login` quando não autenticado
-- Retorno ao fluxo correto após login
-
-### ✅ Troca de Senha (Usuário Logado)
-- Tela dedicada `/change-password`
-- Confirmação da senha atual
-- Validação de nova senha
-- Logout automático após troca (segurança)
-
-### ✅ Reset de Senha (Esqueci minha senha)
-- Solicitação de reset via e-mail
-- Geração de token temporário
-- Redefinição segura de senha
-- Redirecionamento automático após sucesso
-
-------------------------------------------------------------------------
-
-## 🐶 Funcionalidades de Anúncios
-
-### 📌 Cadastro de Pet
-- Tipo: **Adoção** ou **Encontrado/Perdido**
-- Espécie: Cão ou Gato
-- Informações completas (idade, peso, cor, porte, etc.)
-- Upload de múltiplas fotos
-- Definição de foto de capa
-
-### 📌 Listagem e Visualização
-- Home com cards padronizados
-- Badges visuais para tipo do anúncio
-- Página de detalhe com carrossel de fotos
-- Layout responsivo
-
-### 📌 Meus Anúncios
-- Listagem exclusiva do usuário logado
-- Ordenação por status e data
-- Edição e encerramento de anúncios
-
-------------------------------------------------------------------------
-
-## 🤝 Solicitação de Visita
-
-- Usuários podem solicitar visita a um pet
-- Modal com mensagem personalizada
-- **Usuário não logado:**  
-  - Tooltip informativo  
-  - Redirecionamento para login  
-- Anunciante pode aprovar ou rejeitar solicitações
-- Contato liberado apenas após aprovação
-
-------------------------------------------------------------------------
-
-## 👤 Perfil do Usuário
-
-- Visualização de dados pessoais
-- Upload e atualização de avatar
-- Avatar refletido imediatamente no Navbar
-- Inicial gerada automaticamente quando não há foto
-
-------------------------------------------------------------------------
-
-## 🗄️ Modelagem de Dados (Resumo)
-
-- **users**
-- **pet_posts**
-- **pet_photos**
-- **visit_requests**
-- **neighborhoods**
-- **password_reset_tokens**
-
-Banco normalizado com chaves estrangeiras e constraints de integridade.
-
-------------------------------------------------------------------------
-
-## 🗺️ Escopo inicial
-
-Cidade atendida: - Rio Grande / RS
-
-------------------------------------------------------------------------
-
-## 📌 Status do projeto
-
-Em desenvolvimento --- MVP em construção
-
-------------------------------------------------------------------------
-
-## 🎓 Contexto acadêmico
-
-Projeto desenvolvido como Trabalho de Conclusão de Curso (TCC) da
-Pós-Graduação em Desenvolvimento Full Stack, com foco em impacto social,
-arquitetura web moderna e boas práticas de engenharia de software.
+- Abra issues descrevendo contexto, passos para reproduzir e prints/logs.
+- Siga o padrão de lint configurado em `client/eslint.config.js` e scripts equivalentes no backend.
+- Sugestões e PRs são bem-vindos para ampliar filtros, internacionalização e monitoramento.
